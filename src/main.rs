@@ -4,6 +4,7 @@ mod forza_packet;
 
 fn main() {
     let socket = UdpSocket::bind("0.0.0.0:7555").expect("couldn't bind to address");
+    println!("Listening on {:?}...", socket.local_addr().unwrap());
 
     loop {
         let mut packet = forza_packet::ForzaPacket::default();
