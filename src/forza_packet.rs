@@ -1,6 +1,4 @@
-use std::mem::size_of;
-
-pub type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
+use std::{intrinsics::transmute, mem::size_of};
 
 #[repr(C)]
 #[derive(Debug, Default)]
@@ -91,4 +89,12 @@ pub struct ForzaPacket {
     steer: i8,
     normalized_driving_line: i8,
     normalized_aibrake_difference: i8,
+}
+
+type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
+
+impl ForzaPacket {
+    pub fn as_buf(&mut self) -> &mut ForzaPacketRaw {
+        return unsafe { transmute::<&mut ForzaPacket, &mut ForzaPacketRaw>(self) };
+    }
 }
