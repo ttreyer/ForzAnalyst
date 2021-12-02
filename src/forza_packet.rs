@@ -94,7 +94,7 @@ pub struct ForzaPacket {
 type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
 
 impl ForzaPacket {
-    pub fn as_buf(&mut self) -> &mut ForzaPacketRaw {
+    pub fn as_buf<'a>(&'a mut self) -> &'a mut ForzaPacketRaw {
         return unsafe { transmute::<&mut ForzaPacket, &mut ForzaPacketRaw>(self) };
     }
 }
