@@ -1,21 +1,18 @@
-use std::{
-    mem::{size_of, transmute},
-    net::UdpSocket,
-};
+use std::{mem::transmute, net::UdpSocket};
 
 mod forza_packet;
 pub use forza_packet::ForzaPacket;
+use forza_packet::ForzaPacketRaw;
 
 fn main() {
-    let socket = UdpSocket::bind("localhost:7555").expect("couldn't bind to address");
+    let socket = UdpSocket::bind("0.0.0.0:7555").expect("couldn't bind to address");
 
     loop {
-        let mut buf = [0; size_of::<ForzaPacket>()];
-        let (_amt, _src) = socket.recv_from(&mut buf).expect("no dta received");
+        let mut packet: ForzaPacket = ForzaPacket::default();
+        socket
+            .recv_from(unsafe { transmute::<&mut ForzaPacket, &mut ForzaPacketRaw>(&mut packet) })
+            .expect("no data received");
 
-        unsafe {
-            let packet = transmute::<[u8; size_of::<ForzaPacket>()], ForzaPacket>(buf);
-            println!("{:?}", packet);
-        }
+        println!("{:#?}", packet);
     }
 }

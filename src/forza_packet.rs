@@ -1,4 +1,9 @@
-#[derive(Debug)]
+use std::mem::size_of;
+
+pub type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
+
+#[repr(C)]
+#[derive(Debug, Default)]
 pub struct ForzaPacket {
     is_race_on: i32,   // = 1 when race is on. = 0 when in menus/race stopped
     timestamp_ms: u32, //Can overflow to 0 eventually
@@ -53,12 +58,12 @@ pub struct ForzaPacket {
     suspension_travel_meters_front_right: f32,
     suspension_travel_meters_rear_left: f32,
     suspension_travel_meters_rear_right: f32,
-    car_ordinal: i32,           //Unique ID of the car make/model
-    car_class: i32,             //Between 0 (D -- worst cars) and 7 (X class -- best cars) inclusive
+    car_ordinal: i32,              //Unique ID of the car make/model
+    car_class: i32, //Between 0 (D -- worst cars) and 7 (X class -- best cars) inclusive
     car_performance_index: i32, //Between 100 (slowest car) and 999 (fastest car) inclusive
-    drivetrain_type: i32,       //Corresponds to EDrivetrainType, 0 = FWD, 1 = RWD, 2: = AWD
-    num_cylinders: i32,         //Number of cylinders in the engine
-    //hzn HorizonPlaceholder, // unknown FH4 values
+    drivetrain_type: i32, //Corresponds to EDrivetrainType, 0 = FWD, 1 = RWD, 2: = AWD
+    num_cylinders: i32, //Number of cylinders in the engine
+    horizon_placeholder: [u32; 3], // unknown FH4 values
     position_x: f32,
     position_y: f32,
     position_z: f32,
