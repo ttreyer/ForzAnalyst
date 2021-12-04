@@ -61,7 +61,7 @@ pub struct ForzaPacket {
     car_performance_index: i32, //Between 100 (slowest car) and 999 (fastest car) inclusive
     drivetrain_type: i32, //Corresponds to EDrivetrainType, 0 = FWD, 1 = RWD, 2: = AWD
     num_cylinders: i32, //Number of cylinders in the engine
-    horizon_placeholder: [u32; 3], // unknown FH4 values
+    horizon_placeholder: [u8; 12], // unknown FH4 values
     position_x: f32,
     position_y: f32,
     position_z: f32,
@@ -95,6 +95,6 @@ type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
 
 impl ForzaPacket {
     pub fn as_buf<'a>(&'a mut self) -> &'a mut ForzaPacketRaw {
-        return unsafe { transmute::<&mut ForzaPacket, &mut ForzaPacketRaw>(self) };
+        unsafe { transmute::<&mut ForzaPacket, &mut ForzaPacketRaw>(self) }
     }
 }
