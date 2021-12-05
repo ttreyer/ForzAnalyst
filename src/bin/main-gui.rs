@@ -4,6 +4,7 @@ extern crate imgui_opengl_renderer;
 extern crate imgui_sdl2;
 extern crate sdl2;
 
+use imgui::*;
 use std::time::Instant;
 
 fn main() {
@@ -72,6 +73,12 @@ fn main() {
 
         let ui = imgui.frame();
         ui.show_demo_window(&mut true);
+
+        Window::new(im_str!("Hello Window <3"))
+            .size([300.0, 100.0], Condition::FirstUseEver)
+            .build(&ui, || {
+                ui.button(im_str!("hello"), [0f32, 0f32]);
+            });
 
         unsafe {
             gl::ClearColor(0.2, 0.2, 0.2, 1.0);
