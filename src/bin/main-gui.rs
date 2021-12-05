@@ -6,8 +6,10 @@ extern crate sdl2;
 
 use imgui::*;
 use std::time::Instant;
+use forzanalyst::control_panel::ControlPanel;
 
 fn main() {
+    let mut control_panel = ControlPanel::new();
     let sdl_context = sdl2::init().unwrap();
     let video = sdl_context.video().unwrap();
 
@@ -79,6 +81,8 @@ fn main() {
             .build(&ui, || {
                 ui.button(im_str!("hello"), [0f32, 0f32]);
             });
+
+        control_panel.render(&ui);
 
         unsafe {
             gl::ClearColor(0.2, 0.2, 0.2, 1.0);
