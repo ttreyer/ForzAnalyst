@@ -46,5 +46,5 @@ fn main() {
 
     println!();
     println!("Writting output to '{}'", output);
-    write_packets(&packets, &mut File::create(output).unwrap());
+    write_packets(packets.iter(), &mut File::create(output).unwrap());
 }

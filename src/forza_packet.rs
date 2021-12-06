@@ -108,10 +108,16 @@ impl ForzaPacket {
     }
 }
 
-pub fn write_packets(packets: &ForzaPacketVec, output: &mut std::fs::File) {
+pub fn write_packets<'a>(
+    packets: impl Iterator<Item = &'a ForzaPacket>,
+    output: &mut std::fs::File,
+) {
+    let mut packet_count = 0;
     for packet in packets {
+        packet_count += 1;
         output.write_all(packet.as_buf()).expect("write_all");
     }
+    println!("Packets written: {}", packet_count);
 }
 
 pub fn read_packets(input: &mut std::fs::File) -> ForzaPacketVec {
@@ -128,5 +134,6 @@ pub fn read_packets(input: &mut std::fs::File) -> ForzaPacketVec {
         packets.push(packet);
     }
 
+    println!("Packets read: {}", packets.len());
     return packets;
 }
