@@ -15,7 +15,7 @@ impl ControlPanel {
 
     pub fn render(&mut self, ui: &Ui) {
         Window::new(im_str!("Control Records"))
-        .size([300.0, 50.0], Condition::Never)
+        .size([0f32, 0f32], Condition::Never)
         .collapsible(false)
         .scrollable(false)
         .resizable(false)
@@ -38,7 +38,7 @@ impl ControlPanel {
             false => im_str!("Start"),
         };
 
-        if ui.button(title, [60f32, 20f32]) {
+        if ui.button(title, [0f32, 0f32]) {
             self.record = !self.record;
         }
     }
@@ -49,13 +49,13 @@ impl ControlPanel {
             false => im_str!("Record next race"),
         };
 
-        if ui.button(title, [120f32, 20f32]) {
+        if ui.button(title, [0f32, 0f32]) {
             self.next_race = !self.next_race;
         }
     }
 
     fn render_load_button(&mut self, ui: &Ui) {
-        if ui.button(im_str!("Load"), [60f32, 20f32]) {
+        if ui.button(im_str!("Load"), [0f32, 0f32]) {
             //do something to load a save file
         }
     }
