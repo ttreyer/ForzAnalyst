@@ -225,8 +225,15 @@ impl ForzaChunk {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.packets.is_empty()
+    }
+
     pub fn game_mode(&self) -> ForzaGameMode {
-        self.packets[0].game_mode()
+        self.packets
+            .first()
+            .map(|p| p.game_mode())
+            .unwrap_or(ForzaGameMode::FreeRoam)
     }
 
     pub fn push(&mut self, packet: ForzaPacket) {
