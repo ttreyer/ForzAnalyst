@@ -1,4 +1,5 @@
 use std::{
+    collections::LinkedList,
     intrinsics::transmute,
     io::{Read, Write},
     mem::size_of,
@@ -152,6 +153,21 @@ pub fn read_packets(input: &mut std::fs::File) -> ForzaPacketVec {
 
     println!("Packets read: {}", packets.len());
     return packets;
+}
+
+pub fn chunkify(packets: ForzaPacketVec) -> LinkedList<ForzaChunk> {
+    let mut chunks = LinkedList::from([ForzaChunk::new()]);
+    for p in packets {
+        if p.current_race_time == 0.0 {
+            match (p.game_mode(), chunks.back().unwrap().game_mode()) {
+                (ForzaGameMode::FreeRoam, ForzaGameMode::FreeRoam) => {}
+                _ => chunks.push_back(ForzaChunk::new()),
+            }
+        }
+
+        chunks.back_mut().unwrap().push(p);
+    }
+    return chunks;
 }
 
 struct ForzaSocket {

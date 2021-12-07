@@ -5,15 +5,17 @@ use egui::Color32;
 use egui_backend::sdl2::video::GLProfile;
 use egui_backend::{egui, sdl2};
 use egui_backend::{sdl2::event::Event, DpiScaling, ShaderVersion};
-use forzanalyst::gui::control_panel::ControlPanel;
+use forzanalyst::forza::forza_packet::{chunkify, read_packets};
+use forzanalyst::gui::*;
 use sdl2::video::SwapInterval;
+use std::fs::File;
 use std::time::Instant;
 
 const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 
 fn main() {
-    let mut control_panel = ControlPanel::new();
+    let mut control_panel = control_panel::ControlPanel::new();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let gl_attr = video_subsystem.gl_attr();
@@ -46,12 +48,15 @@ fn main() {
     // let shader_ver = ShaderVersion::Default;
     // On linux use GLES SL 100+, like so:
     let (mut painter, mut egui_state) =
-        egui_backend::with_sdl2(&window, ShaderVersion::Default, DpiScaling::Custom(3.0));
+        egui_backend::with_sdl2(&window, ShaderVersion::Default, DpiScaling::Default);
     let mut egui_ctx = egui::CtxRef::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut test_str: String =
         "A text box to write in. Cut, copy, paste commands are available.".to_owned();
+
+    let packets = read_packets(&mut File::open("race.ftm").unwrap());
+    let chunks = chunkify(packets);
 
     let mut quit = false;
     let mut slider = 0.0;
@@ -73,6 +78,8 @@ fn main() {
                 quit = true;
             }
         });
+
+        chunk_panel::ChunkPanel::show(&egui_ctx, &chunks);
 
         control_panel.render(&egui_ctx);
 
