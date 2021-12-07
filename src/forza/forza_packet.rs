@@ -170,7 +170,7 @@ pub fn chunkify(packets: ForzaPacketVec) -> LinkedList<ForzaChunk> {
     return chunks;
 }
 
-struct ForzaSocket {
+pub struct ForzaSocket {
     thread: JoinHandle<()>,
     receiver: Receiver<ForzaPacket>,
 }

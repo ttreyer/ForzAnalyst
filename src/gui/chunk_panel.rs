@@ -6,6 +6,9 @@ use crate::forza::forza_packet::{ForzaChunk, ForzaGameMode};
 pub struct ChunkPanel {}
 
 impl ChunkPanel {
+    pub fn new() -> Self {
+        Self{}
+    }
     pub fn show(ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
         egui::Window::new("Chunk").show(ctx, |ui| {
             for chunk in chunks {
