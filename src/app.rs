@@ -2,7 +2,6 @@ use std::collections::LinkedList;
 
 use crate::egui_backend::egui;
 use crate::forza::forza_packet::{Chunks, ForzaChunk, ForzaGameMode};
-use crate::gui::control_panel;
 use crate::{
     forza::forza_packet::ForzaSocket,
     gui::{chunk_panel::ChunkPanel, control_panel::ControlPanel},
