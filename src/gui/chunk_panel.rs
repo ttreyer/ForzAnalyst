@@ -7,9 +7,10 @@ pub struct ChunkPanel {}
 
 impl ChunkPanel {
     pub fn new() -> Self {
-        Self{}
+        Self {}
     }
-    pub fn show(ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
+
+    pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
         egui::Window::new("Chunk").show(ctx, |ui| {
             for chunk in chunks {
                 match chunk.game_mode() {

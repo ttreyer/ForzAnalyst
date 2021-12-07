@@ -79,9 +79,10 @@ fn main() {
             }
         });
 
-        chunk_panel::ChunkPanel::show(&egui_ctx, &chunks);
+        let mut chunk_panel = chunk_panel::ChunkPanel::new();
+        chunk_panel.show(&egui_ctx, &chunks);
 
-        control_panel.render(&egui_ctx);
+        control_panel.show(&egui_ctx);
 
         let (egui_output, paint_cmds) = egui_ctx.end_frame();
         // Process ouput

@@ -1,6 +1,6 @@
-use egui_sdl2_gl as egui_backend;
-use egui_backend::egui;
 use egui::{CtxRef, Ui};
+use egui_backend::egui;
+use egui_sdl2_gl as egui_backend;
 
 pub struct ControlPanel {
     record: bool,
@@ -15,13 +15,12 @@ impl ControlPanel {
         }
     }
 
-    pub fn render(&mut self, ctx: &CtxRef) {
+    pub fn show(&mut self, ctx: &CtxRef) {
         egui::Window::new("Control Records")
             .auto_sized()
             .collapsible(false)
             .resizable(false)
             .show(ctx, |ui| {
-
                 ui.horizontal(|ui| {
                     self.render_record_button(ui);
 
