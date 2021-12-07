@@ -41,6 +41,8 @@ impl App {
 
                 self.chunks.back_mut().unwrap().push(p);
             }
+        } else {
+            let _ = data.last();
         }
     }
 
