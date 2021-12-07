@@ -1,5 +1,5 @@
 use egui::{CtxRef, Ui};
-use egui_backend::egui;
+use egui_backend::egui::{self, Button};
 use egui_sdl2_gl as egui_backend;
 
 pub struct ControlPanel {
@@ -13,6 +13,18 @@ impl ControlPanel {
             record: false,
             next_race: false,
         }
+    }
+
+    pub fn is_record(&self) -> bool {
+        self.record
+    }
+
+    pub fn want_next_race(&self) -> bool {
+        self.record
+    }
+
+    pub fn start_race(&mut self) {
+        self.record = true;
     }
 
     pub fn show(&mut self, ctx: &CtxRef) {
@@ -48,13 +60,17 @@ impl ControlPanel {
             false => "Record next race",
         };
 
-        if ui.button(title).clicked() {
+        let btn = Button::new(title);
+
+        if ui.add_enabled(false, btn).clicked() {
             self.next_race = !self.next_race;
         }
     }
 
     fn render_load_button(&mut self, ui: &mut Ui) {
-        if ui.button("Load").clicked() {
+        let btn = Button::new("Load");
+
+        if ui.add_enabled(false, btn).clicked() {
             //do something to load a save file
         }
     }
