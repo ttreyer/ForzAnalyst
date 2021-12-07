@@ -1,4 +1,6 @@
-use imgui::{im_str, Condition, Ui, Window};
+use egui_sdl2_gl as egui_backend;
+use egui_backend::egui;
+use egui::{CtxRef, Ui};
 
 pub struct ControlPanel {
     record: bool,
@@ -13,49 +15,47 @@ impl ControlPanel {
         }
     }
 
-    pub fn render(&mut self, ui: &Ui) {
-        Window::new(im_str!("Control Records"))
-            .size([0f32, 0f32], Condition::Never)
+    pub fn render(&mut self, ctx: &CtxRef) {
+        egui::Window::new("Control Records")
+            .auto_sized()
             .collapsible(false)
-            .scrollable(false)
             .resizable(false)
-            .build(&ui, || {
-                self.render_record_button(ui);
+            .show(ctx, |ui| {
 
-                ui.same_line(0f32);
+                ui.horizontal(|ui| {
+                    self.render_record_button(ui);
 
-                self.render_next_race_button(ui);
+                    self.render_next_race_button(ui);
 
-                ui.same_line(0f32);
-
-                self.render_load_button(ui);
+                    self.render_load_button(ui);
+                });
             });
     }
 
-    fn render_record_button(&mut self, ui: &Ui) {
+    fn render_record_button(&mut self, ui: &mut Ui) {
         let title = match self.record {
-            true => im_str!("Stop"),
-            false => im_str!("Start"),
+            true => "Stop",
+            false => "Start",
         };
 
-        if ui.button(title, [0f32, 0f32]) {
+        if ui.button(title).clicked() {
             self.record = !self.record;
         }
     }
 
-    fn render_next_race_button(&mut self, ui: &Ui) {
+    fn render_next_race_button(&mut self, ui: &mut Ui) {
         let title = match self.next_race {
-            true => im_str!("Cancel next race"),
-            false => im_str!("Record next race"),
+            true => "Cancel next race",
+            false => "Record next race",
         };
 
-        if ui.button(title, [0f32, 0f32]) {
+        if ui.button(title).clicked() {
             self.next_race = !self.next_race;
         }
     }
 
-    fn render_load_button(&mut self, ui: &Ui) {
-        if ui.button(im_str!("Load"), [0f32, 0f32]) {
+    fn render_load_button(&mut self, ui: &mut Ui) {
+        if ui.button("Load").clicked() {
             //do something to load a save file
         }
     }

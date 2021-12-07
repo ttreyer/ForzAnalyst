@@ -5,6 +5,7 @@ use egui::Color32;
 use egui_backend::sdl2::video::GLProfile;
 use egui_backend::{egui, sdl2};
 use egui_backend::{sdl2::event::Event, DpiScaling, ShaderVersion};
+use forzanalyst::gui::control_panel::ControlPanel;
 use sdl2::video::SwapInterval;
 use std::time::Instant;
 
@@ -12,6 +13,7 @@ const SCREEN_WIDTH: u32 = 800;
 const SCREEN_HEIGHT: u32 = 600;
 
 fn main() {
+    let mut control_panel = ControlPanel::new();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let gl_attr = video_subsystem.gl_attr();
@@ -71,6 +73,8 @@ fn main() {
                 quit = true;
             }
         });
+
+        control_panel.render(&egui_ctx);
 
         let (egui_output, paint_cmds) = egui_ctx.end_frame();
         // Process ouput
