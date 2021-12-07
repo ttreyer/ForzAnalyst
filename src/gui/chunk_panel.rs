@@ -35,8 +35,10 @@ impl ChunkPanel {
     }
 
     pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
+        let mut packets_count = 0usize;
         egui::Window::new("Chunk").show(ctx, |ui| {
             for (chunk_id, chunk) in chunks.iter().enumerate() {
+                packets_count += chunk.packets.len();
                 match chunk.game_mode() {
                     ForzaGameMode::FreeRoam => {
                         if ui
@@ -48,6 +50,7 @@ impl ChunkPanel {
                     }
                     ForzaGameMode::Race => {
                         if egui::CollapsingHeader::new("Race")
+                            .id_source(chunk_id)
                             .selectable(true)
                             .selected(self.is_selected(chunk_id, 0))
                             .show(ui, |ui| {
@@ -71,6 +74,7 @@ impl ChunkPanel {
                     }
                 }
             }
+            ui.label(format!("Packets: {}", packets_count));
         });
     }
 }

@@ -215,7 +215,7 @@ impl ForzaSocket {
 }
 
 pub struct ForzaChunk {
-    packets: ForzaPacketVec,
+    pub packets: ForzaPacketVec,
 }
 
 impl ForzaChunk {

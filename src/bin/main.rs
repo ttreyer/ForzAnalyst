@@ -48,7 +48,7 @@ fn main() {
     // let shader_ver = ShaderVersion::Default;
     // On linux use GLES SL 100+, like so:
     let (mut painter, mut egui_state) =
-        egui_backend::with_sdl2(&window, ShaderVersion::Default, DpiScaling::Default);
+        egui_backend::with_sdl2(&window, ShaderVersion::Default, DpiScaling::Custom(3.0));
     let mut egui_ctx = egui::CtxRef::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
@@ -67,7 +67,7 @@ fn main() {
 
     'running: loop {
         app.process();
-        
+
         egui_state.input.time = Some(start_time.elapsed().as_secs_f64());
         egui_ctx.begin_frame(egui_state.input.take());
 
@@ -80,11 +80,24 @@ fn main() {
         let paint_jobs = egui_ctx.tessellate(paint_cmds);
 
         if !egui_output.needs_repaint {
-            match event_pump.wait_event() {
-                Event::Quit { .. } => break 'running,
-                event => {
+            match event_pump.wait_event_timeout(10) {
+                Some(Event::Quit { .. }) => break 'running,
+                Some(event) => {
                     // Process input event
                     egui_state.process_input(&window, event, &mut painter);
+                }
+                None => {
+                    painter.paint_jobs(Some(Color32::LIGHT_GRAY), paint_jobs, &egui_ctx.texture());
+                    window.gl_swap_window();
+                    for event in event_pump.poll_iter() {
+                        match event {
+                            Event::Quit { .. } => break 'running,
+                            _ => {
+                                // Process input event
+                                egui_state.process_input(&window, event, &mut painter);
+                            }
+                        }
+                    }
                 }
             }
         } else {
