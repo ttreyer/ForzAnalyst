@@ -101,7 +101,20 @@ pub struct ForzaPacket {
 type ForzaPacketRaw = [u8; size_of::<ForzaPacket>()];
 pub type ForzaPacketVec = std::vec::Vec<ForzaPacket>;
 
+#[derive(Debug, PartialEq)]
+pub enum ForzaGameMode {
+    FreeRoam,
+    Race,
+}
+
 impl ForzaPacket {
+    pub fn game_mode(&self) -> ForzaGameMode {
+        match self.race_position {
+            0 => ForzaGameMode::FreeRoam,
+            _ => ForzaGameMode::Race,
+        }
+    }
+
     pub fn as_buf<'a>(&'a self) -> &'a ForzaPacketRaw {
         unsafe { transmute::<&ForzaPacket, &ForzaPacketRaw>(self) }
     }
@@ -180,5 +193,25 @@ impl ForzaSocket {
 
     pub fn try_iter(&self) -> TryIter<'_, ForzaPacket> {
         self.receiver.try_iter()
+    }
+}
+
+pub struct ForzaChunk {
+    packets: ForzaPacketVec,
+}
+
+impl ForzaChunk {
+    pub fn new() -> Self {
+        ForzaChunk {
+            packets: ForzaPacketVec::new(),
+        }
+    }
+
+    pub fn game_mode(&self) -> ForzaGameMode {
+        self.packets[0].game_mode()
+    }
+
+    pub fn push(&mut self, packet: ForzaPacket) {
+        self.packets.push(packet)
     }
 }
