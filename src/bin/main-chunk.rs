@@ -1,4 +1,4 @@
-use forzanalyst::forza_packet::*;
+use forzanalyst::forza::forza_packet::*;
 use std::{collections::LinkedList, fs::File};
 
 fn main() {

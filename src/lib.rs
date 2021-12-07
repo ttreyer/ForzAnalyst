@@ -1,2 +1,2 @@
-pub mod forza_packet;
-pub mod control_panel;
+pub mod forza;
+pub mod gui;
