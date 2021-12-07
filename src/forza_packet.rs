@@ -2,6 +2,9 @@ use std::{
     intrinsics::transmute,
     io::{Read, Write},
     mem::size_of,
+    net::UdpSocket,
+    sync::mpsc::Receiver,
+    thread::JoinHandle,
 };
 
 #[repr(C)]
@@ -136,4 +139,39 @@ pub fn read_packets(input: &mut std::fs::File) -> ForzaPacketVec {
 
     println!("Packets read: {}", packets.len());
     return packets;
+}
+
+struct ForzaSocket {
+    thread: JoinHandle<()>,
+    receiver: Receiver<ForzaPacket>,
+}
+
+impl ForzaSocket {
+    pub fn new(addr: &str) -> Self {
+        let (sender, receiver) = std::sync::mpsc::channel();
+
+        let socket = UdpSocket::bind(addr).expect("couldn't bind to address");
+        println!("Listening on {:?}...", socket.local_addr().unwrap());
+
+        let thread = std::thread::spawn(move || {
+            let mut last_packet_timestamp = 0u32;
+            loop {
+                let mut packet = ForzaPacket::default();
+                socket.recv_from(packet.as_buf_mut()).unwrap();
+
+                if packet.timestamp_ms == last_packet_timestamp {
+                    continue;
+                }
+
+                last_packet_timestamp = packet.timestamp_ms;
+                sender.send(packet).unwrap();
+            }
+        });
+
+        ForzaSocket { thread, receiver }
+    }
+
+    pub fn iter(&mut self) -> std::sync::mpsc::TryIter<'_, ForzaPacket> {
+        self.receiver.try_iter()
+    }
 }
