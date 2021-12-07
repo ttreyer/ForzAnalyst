@@ -1,99 +1,107 @@
-extern crate gl;
-extern crate imgui;
-extern crate imgui_opengl_renderer;
-extern crate imgui_sdl2;
-extern crate sdl2;
+// Alias the backend to something less mouthful
+use egui_sdl2_gl as egui_backend;
 
-use imgui::*;
+use egui::Color32;
+use egui_backend::sdl2::video::GLProfile;
+use egui_backend::{egui, sdl2};
+use egui_backend::{sdl2::event::Event, DpiScaling, ShaderVersion};
+use sdl2::video::SwapInterval;
 use std::time::Instant;
-use forzanalyst::control_panel::ControlPanel;
+
+const SCREEN_WIDTH: u32 = 800;
+const SCREEN_HEIGHT: u32 = 600;
 
 fn main() {
-    let mut control_panel = ControlPanel::new();
     let sdl_context = sdl2::init().unwrap();
-    let video = sdl_context.video().unwrap();
+    let video_subsystem = sdl_context.video().unwrap();
+    let gl_attr = video_subsystem.gl_attr();
+    gl_attr.set_context_profile(GLProfile::Core);
+    // On linux, OpenGL ES Mesa driver 22.0.0+ can be used like so:
+    // gl_attr.set_context_profile(GLProfile::GLES);
 
-    {
-        let gl_attr = video.gl_attr();
-        gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-        gl_attr.set_context_version(3, 0);
-    }
+    gl_attr.set_double_buffer(true);
+    gl_attr.set_multisample_samples(0);
 
-    let window = video
-        .window("rust-imgui-sdl2 demo", 800, 600)
-        .position_centered()
-        .resizable()
+    let window = video_subsystem
+        .window(
+            "Demo: Egui backend for SDL2 + GL",
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+        )
         .opengl()
-        .allow_highdpi()
+        .resizable()
         .build()
         .unwrap();
 
-    let _gl_context = window
-        .gl_create_context()
-        .expect("Couldn't create GL context");
-    gl::load_with(|s| video.gl_get_proc_address(s) as _);
+    // Create a window context
+    let _ctx = window.gl_create_context().unwrap();
+    window
+        .subsystem()
+        .gl_set_swap_interval(SwapInterval::VSync)
+        .unwrap();
 
-    let mut imgui = imgui::Context::create();
-    imgui.set_ini_filename(None);
-
-    let mut imgui_sdl2 = imgui_sdl2::ImguiSdl2::new(&mut imgui, &window);
-
-    let renderer =
-        imgui_opengl_renderer::Renderer::new(&mut imgui, |s| video.gl_get_proc_address(s) as _);
-
+    // Init egui stuff
+    // let shader_ver = ShaderVersion::Default;
+    // On linux use GLES SL 100+, like so:
+    let (mut painter, mut egui_state) =
+        egui_backend::with_sdl2(&window, ShaderVersion::Default, DpiScaling::Custom(3.0));
+    let mut egui_ctx = egui::CtxRef::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut last_frame = Instant::now();
+    let mut test_str: String =
+        "A text box to write in. Cut, copy, paste commands are available.".to_owned();
+
+    let mut quit = false;
+    let mut slider = 0.0;
+
+    let start_time = Instant::now();
 
     'running: loop {
-        use sdl2::event::Event;
-        use sdl2::keyboard::Keycode;
+        egui_state.input.time = Some(start_time.elapsed().as_secs_f64());
+        egui_ctx.begin_frame(egui_state.input.take());
 
-        for event in event_pump.poll_iter() {
-            imgui_sdl2.handle_event(&mut imgui, &event);
-            if imgui_sdl2.ignore_event(&event) {
-                continue;
+        egui::Window::new("Forza").show(&egui_ctx, |ui| {
+            ui.label(" ");
+            ui.text_edit_multiline(&mut test_str);
+            ui.label(" ");
+            ui.add(egui::Slider::new(&mut slider, 0.0..=50.0).text("Slider"));
+            ui.label(" ");
+            ui.separator();
+            if ui.button("Quit?").clicked() {
+                quit = true;
             }
+        });
 
-            match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
-                _ => {}
+        let (egui_output, paint_cmds) = egui_ctx.end_frame();
+        // Process ouput
+        egui_state.process_output(&window, &egui_output);
+
+        let paint_jobs = egui_ctx.tessellate(paint_cmds);
+
+        if !egui_output.needs_repaint {
+            match event_pump.wait_event() {
+                Event::Quit { .. } => break 'running,
+                event => {
+                    // Process input event
+                    egui_state.process_input(&window, event, &mut painter);
+                }
+            }
+        } else {
+            painter.paint_jobs(Some(Color32::LIGHT_GRAY), paint_jobs, &egui_ctx.texture());
+            window.gl_swap_window();
+            for event in event_pump.poll_iter() {
+                match event {
+                    Event::Quit { .. } => break 'running,
+                    _ => {
+                        // Process input event
+                        egui_state.process_input(&window, event, &mut painter);
+                    }
+                }
             }
         }
 
-        imgui_sdl2.prepare_frame(imgui.io_mut(), &window, &event_pump.mouse_state());
-
-        let now = Instant::now();
-        let delta = now - last_frame;
-        let delta_s = delta.as_secs() as f32 + delta.subsec_nanos() as f32 / 1_000_000_000.0;
-        last_frame = now;
-        imgui.io_mut().delta_time = delta_s;
-
-        let ui = imgui.frame();
-        ui.show_demo_window(&mut true);
-
-        Window::new(im_str!("Hello Window <3"))
-            .size([300.0, 100.0], Condition::FirstUseEver)
-            .build(&ui, || {
-                ui.button(im_str!("hello"), [0f32, 0f32]);
-            });
-
-        control_panel.render(&ui);
-
-        unsafe {
-            gl::ClearColor(0.2, 0.2, 0.2, 1.0);
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+        if quit {
+            break;
         }
-
-        imgui_sdl2.prepare_render(&ui, &window);
-        renderer.render(ui);
-
-        window.gl_swap_window();
-
-        ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / 60));
     }
 }

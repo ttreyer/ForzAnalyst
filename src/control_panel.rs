@@ -1,4 +1,4 @@
-use imgui::{Ui, Window, im_str, Condition};
+use imgui::{im_str, Condition, Ui, Window};
 
 pub struct ControlPanel {
     record: bool,
@@ -15,21 +15,21 @@ impl ControlPanel {
 
     pub fn render(&mut self, ui: &Ui) {
         Window::new(im_str!("Control Records"))
-        .size([0f32, 0f32], Condition::Never)
-        .collapsible(false)
-        .scrollable(false)
-        .resizable(false)
-        .build(&ui, || {
-            self.render_record_button(ui);
+            .size([0f32, 0f32], Condition::Never)
+            .collapsible(false)
+            .scrollable(false)
+            .resizable(false)
+            .build(&ui, || {
+                self.render_record_button(ui);
 
-            ui.same_line(0f32);
+                ui.same_line(0f32);
 
-            self.render_next_race_button(ui);
+                self.render_next_race_button(ui);
 
-            ui.same_line(0f32);
+                ui.same_line(0f32);
 
-            self.render_load_button(ui);
-        });
+                self.render_load_button(ui);
+            });
     }
 
     fn render_record_button(&mut self, ui: &Ui) {
