@@ -3,7 +3,7 @@ use std::{
     io::{Read, Write},
     mem::size_of,
     net::UdpSocket,
-    sync::mpsc::Receiver,
+    sync::mpsc::{Iter, Receiver, TryIter},
     thread::JoinHandle,
 };
 
@@ -171,7 +171,11 @@ impl ForzaSocket {
         ForzaSocket { thread, receiver }
     }
 
-    pub fn iter(&mut self) -> std::sync::mpsc::TryIter<'_, ForzaPacket> {
+    pub fn iter(&self) -> Iter<'_, ForzaPacket> {
+        self.receiver.iter()
+    }
+
+    pub fn try_iter(&self) -> TryIter<'_, ForzaPacket> {
         self.receiver.try_iter()
     }
 }
