@@ -47,9 +47,9 @@ impl ChunkPanel {
                         }
                     }
                     ForzaGameMode::Race => {
-                        egui::CollapsingHeader::new("Race")
+                        if egui::CollapsingHeader::new("Race")
                             .selectable(true)
-                            .selected(false)
+                            .selected(self.is_selected(chunk_id, 0))
                             .show(ui, |ui| {
                                 for lap_id in 1..=3 {
                                     if ui
@@ -62,7 +62,12 @@ impl ChunkPanel {
                                         self.select(chunk_id, lap_id)
                                     }
                                 }
-                            });
+                            })
+                            .header_response
+                            .clicked()
+                        {
+                            self.select(chunk_id, 0);
+                        }
                     }
                 }
             }

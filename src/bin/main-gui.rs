@@ -52,6 +52,7 @@ fn main() {
     let mut egui_ctx = egui::CtxRef::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
+    let mut chunk_panel = chunk_panel::ChunkPanel::new();
     let mut test_str: String =
         "A text box to write in. Cut, copy, paste commands are available.".to_owned();
 
@@ -79,7 +80,6 @@ fn main() {
             }
         });
 
-        let mut chunk_panel = chunk_panel::ChunkPanel::new();
         chunk_panel.show(&egui_ctx, &chunks);
 
         control_panel.show(&egui_ctx);
