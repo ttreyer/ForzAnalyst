@@ -66,6 +66,8 @@ fn main() {
     let mut app = App::new("0.0.0.0:7024");
 
     'running: loop {
+        app.process();
+        
         egui_state.input.time = Some(start_time.elapsed().as_secs_f64());
         egui_ctx.begin_frame(egui_state.input.take());
 
