@@ -159,6 +159,9 @@ impl ForzaSocket {
                 let mut packet = ForzaPacket::default();
                 socket.recv_from(packet.as_buf_mut()).unwrap();
 
+                if packet.is_race_on == 0 {
+                    continue;
+                }
                 if packet.timestamp_ms == last_packet_timestamp {
                     continue;
                 }

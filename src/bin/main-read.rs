@@ -8,6 +8,7 @@ fn main() {
     let mut last_packet_timestamp = 0;
     let dedup_packets = packets
         .iter()
+        .filter(|p| p.is_race_on == 1)
         .filter(|p| replace(&mut last_packet_timestamp, p.timestamp_ms) != p.timestamp_ms);
 
     let output = std::env::args()
