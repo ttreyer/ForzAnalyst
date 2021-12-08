@@ -246,6 +246,13 @@ impl ForzaChunk {
             .unwrap_or(ForzaGameMode::FreeRoam)
     }
 
+    pub fn lap_count(&self) -> u16 {
+        self.packets
+            .last()
+            .map(|p| p.lap_number)
+            .unwrap_or_default()
+    }
+
     pub fn push(&mut self, packet: ForzaPacket) {
         self.packets.push(packet)
     }

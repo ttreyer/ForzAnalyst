@@ -6,11 +6,11 @@ use crate::forza::forza_packet::{ForzaChunk, ForzaGameMode};
 #[derive(PartialEq)]
 pub struct ChunkSelection {
     chunk_id: usize,
-    lap_id: usize,
+    lap_id: u16,
 }
 
 impl ChunkSelection {
-    pub fn new(chunk_id: usize, lap_id: usize) -> Self {
+    pub fn new(chunk_id: usize, lap_id: u16) -> Self {
         Self { chunk_id, lap_id }
     }
 }
@@ -26,11 +26,11 @@ impl ChunkPanel {
         }
     }
 
-    fn select(&mut self, chunk_id: usize, lap_id: usize) {
+    fn select(&mut self, chunk_id: usize, lap_id: u16) {
         self.selection = ChunkSelection { chunk_id, lap_id }
     }
 
-    fn is_selected(&self, chunk_id: usize, lap_id: usize) -> bool {
+    fn is_selected(&self, chunk_id: usize, lap_id: u16) -> bool {
         ChunkSelection { chunk_id, lap_id } == self.selection
     }
 
@@ -54,7 +54,7 @@ impl ChunkPanel {
                             .selectable(true)
                             .selected(self.is_selected(chunk_id, 0))
                             .show(ui, |ui| {
-                                for lap_id in 1..=3 {
+                                for lap_id in 1..=chunk.lap_count() {
                                     if ui
                                         .selectable_label(
                                             self.is_selected(chunk_id, lap_id),
