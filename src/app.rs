@@ -34,7 +34,12 @@ impl App {
                 if p.current_race_time == 0.0 {
                     match (p.game_mode(), self.chunks.back().unwrap().game_mode()) {
                         (ForzaGameMode::FreeRoam, ForzaGameMode::FreeRoam) => {}
-                        _ => self.chunks.push_back(ForzaChunk::new()),
+                        _ => {
+                            self.chunks.back_mut().map(|c| c.finalize());
+                            if self.chunks.back().map(|c| c.is_empty()).unwrap_or(true) {
+                                self.chunks.push_back(ForzaChunk::new())
+                            }
+                        }
                     }
                 }
 

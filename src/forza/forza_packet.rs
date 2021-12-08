@@ -221,7 +221,17 @@ pub struct ForzaChunk {
 impl ForzaChunk {
     pub fn new() -> Self {
         ForzaChunk {
-            packets: ForzaPacketVec::new(),
+            packets: ForzaPacketVec::with_capacity(5 * 60 * 60),
+        }
+    }
+
+    pub fn with_packets(packets: ForzaPacketVec) -> Self {
+        ForzaChunk { packets }
+    }
+
+    pub fn finalize(&mut self) {
+        if !self.is_empty() {
+            self.packets.shrink_to_fit();
         }
     }
 
