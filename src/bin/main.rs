@@ -56,13 +56,11 @@ fn main() {
 
     // Premultiply alpha:
     let pixels: Vec<_> = image
-        .into_vec()
-        .chunks_exact(4)
+        .pixels()
         .map(|p| egui::Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
         .collect();
 
-    let map_id =
-        painter.new_user_texture(image_dimensions, &pixels, false);
+    let map_id = painter.new_user_texture(image_dimensions, &pixels, true);
 
     let mut app = App::new("0.0.0.0:7024", map_id);
 
