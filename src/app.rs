@@ -1,5 +1,6 @@
 use crate::egui_backend::egui;
 use crate::forza::forza_packet::*;
+use crate::gui::chunk_panel::ChunkSelection;
 use crate::gui::{chunk_panel::ChunkPanel, control_panel::ControlPanel, map_panel::MapPanel};
 
 use egui::CtxRef;
@@ -53,11 +54,8 @@ impl App {
 
         self.chunk_panel.show(ctx, &self.chunks);
 
-        let selected_chunk = self
-            .chunks
-            .iter()
-            .nth(self.chunk_panel.selection.chunk_id)
-            .unwrap();
+        let ChunkSelection(chunk_id, _) = self.chunk_panel.selection;
+        let selected_chunk = self.chunks.iter().nth(chunk_id).unwrap();
         self.map_panel.show(ctx, &selected_chunk.packets);
     }
 }

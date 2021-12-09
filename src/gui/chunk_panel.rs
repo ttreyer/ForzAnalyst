@@ -3,17 +3,11 @@ use std::collections::LinkedList;
 use crate::egui_backend::egui;
 use crate::forza::forza_packet::{ForzaChunk, ForzaGameMode};
 
-#[derive(PartialEq)]
-pub struct ChunkSelection {
-    pub chunk_id: usize,
-    pub lap_id: u16,
-}
+type ChunkID = usize;
+type LapID = Option<u16>;
 
-impl ChunkSelection {
-    pub fn new(chunk_id: usize, lap_id: u16) -> Self {
-        Self { chunk_id, lap_id }
-    }
-}
+#[derive(PartialEq)]
+pub struct ChunkSelection(pub ChunkID, pub LapID);
 
 pub struct ChunkPanel {
     pub selection: ChunkSelection,
@@ -22,20 +16,20 @@ pub struct ChunkPanel {
 impl ChunkPanel {
     pub fn new() -> Self {
         Self {
-            selection: ChunkSelection::new(0, 0),
+            selection: ChunkSelection(0, None),
         }
     }
 
-    fn select(&mut self, chunk_id: usize, lap_id: u16) {
-        self.selection = ChunkSelection { chunk_id, lap_id }
+    fn select(&mut self, chunk_id: ChunkID, lap_id: LapID) {
+        self.selection = ChunkSelection(chunk_id, lap_id)
     }
 
-    fn is_selected(&self, chunk_id: usize, lap_id: u16) -> bool {
-        ChunkSelection { chunk_id, lap_id } == self.selection
+    fn is_selected(&self, chunk_id: ChunkID, lap_id: LapID) -> bool {
+        ChunkSelection(chunk_id, lap_id) == self.selection
     }
 
-    fn show_free_roam(&mut self, ui: &mut egui::Ui, chunk_id: usize) -> egui::Response {
-        ui.selectable_label(self.is_selected(chunk_id, 0), "Free Roam")
+    fn show_free_roam(&mut self, ui: &mut egui::Ui, chunk_id: ChunkID) -> egui::Response {
+        ui.selectable_label(self.is_selected(chunk_id, None), "Free Roam")
     }
 
     fn show_race(
@@ -47,18 +41,18 @@ impl ChunkPanel {
         egui::CollapsingHeader::new("Race")
             .id_source(chunk_id)
             .selectable(true)
-            .selected(self.is_selected(chunk_id, 0))
+            .selected(self.is_selected(chunk_id, None))
             .default_open(true)
             .show(ui, |ui| {
                 for lap_id in 0..=chunk.lap_count() {
                     if ui
                         .selectable_label(
-                            self.is_selected(chunk_id, lap_id),
+                            self.is_selected(chunk_id, Some(lap_id)),
                             format!("Lap {}", lap_id),
                         )
                         .clicked()
                     {
-                        self.select(chunk_id, lap_id)
+                        self.select(chunk_id, Some(lap_id))
                     }
                 }
             })
@@ -74,12 +68,12 @@ impl ChunkPanel {
                 match chunk.game_mode() {
                     ForzaGameMode::FreeRoam => {
                         if self.show_free_roam(ui, chunk_id).clicked() {
-                            self.select(chunk_id, 0)
+                            self.select(chunk_id, None)
                         }
                     }
                     ForzaGameMode::Race => {
                         if self.show_race(ui, chunk_id, &chunk).clicked() {
-                            self.select(chunk_id, 0);
+                            self.select(chunk_id, None);
                         }
                     }
                 }
