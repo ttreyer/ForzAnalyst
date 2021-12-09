@@ -247,10 +247,7 @@ impl ForzaChunk {
     }
 
     pub fn lap_count(&self) -> u16 {
-        self.packets
-            .last()
-            .map(|p| p.lap_number)
-            .unwrap_or_default()
+        self.packets.iter().map(|p| p.lap_number).max().unwrap_or(0)
     }
 
     pub fn push(&mut self, packet: ForzaPacket) {
