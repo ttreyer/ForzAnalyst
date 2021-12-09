@@ -34,46 +34,57 @@ impl ChunkPanel {
         ChunkSelection { chunk_id, lap_id } == self.selection
     }
 
+    fn show_free_roam(&mut self, ui: &mut egui::Ui, chunk_id: usize) -> egui::Response {
+        ui.selectable_label(self.is_selected(chunk_id, 0), "Free Roam")
+    }
+
+    fn show_race(
+        &mut self,
+        ui: &mut egui::Ui,
+        chunk_id: usize,
+        chunk: &ForzaChunk,
+    ) -> egui::Response {
+        egui::CollapsingHeader::new("Race")
+            .id_source(chunk_id)
+            .selectable(true)
+            .selected(self.is_selected(chunk_id, 0))
+            .default_open(true)
+            .show(ui, |ui| {
+                for lap_id in 1..=chunk.lap_count() {
+                    if ui
+                        .selectable_label(
+                            self.is_selected(chunk_id, lap_id),
+                            format!("Lap {}", lap_id),
+                        )
+                        .clicked()
+                    {
+                        self.select(chunk_id, lap_id)
+                    }
+                }
+            })
+            .header_response
+    }
+
     pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
-        let mut packets_count = 0usize;
         egui::Window::new("Chunk").show(ctx, |ui| {
+            let mut packets_count = 0usize;
+
             for (chunk_id, chunk) in chunks.iter().enumerate() {
                 packets_count += chunk.packets.len();
                 match chunk.game_mode() {
                     ForzaGameMode::FreeRoam => {
-                        if ui
-                            .selectable_label(self.is_selected(chunk_id, 0), "Free Roam")
-                            .clicked()
-                        {
+                        if self.show_free_roam(ui, chunk_id).clicked() {
                             self.select(chunk_id, 0)
                         }
                     }
                     ForzaGameMode::Race => {
-                        if egui::CollapsingHeader::new("Race")
-                            .id_source(chunk_id)
-                            .selectable(true)
-                            .selected(self.is_selected(chunk_id, 0))
-                            .show(ui, |ui| {
-                                for lap_id in 1..=chunk.lap_count() {
-                                    if ui
-                                        .selectable_label(
-                                            self.is_selected(chunk_id, lap_id),
-                                            format!("Lap {}", lap_id),
-                                        )
-                                        .clicked()
-                                    {
-                                        self.select(chunk_id, lap_id)
-                                    }
-                                }
-                            })
-                            .header_response
-                            .clicked()
-                        {
+                        if self.show_race(ui, chunk_id, &chunk).clicked() {
                             self.select(chunk_id, 0);
                         }
                     }
                 }
             }
+
             ui.label(format!("Packets: {}", packets_count));
         });
     }
