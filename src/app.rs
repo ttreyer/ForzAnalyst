@@ -54,8 +54,11 @@ impl App {
 
         self.chunk_panel.show(ctx, &self.chunks);
 
-        let ChunkSelection(chunk_id, _) = self.chunk_panel.selection;
+        let ChunkSelection(chunk_id, lap_id) = self.chunk_panel.selection;
         let selected_chunk = self.chunks.iter().nth(chunk_id).unwrap();
-        self.map_panel.show(ctx, &selected_chunk.packets);
+        match lap_id {
+            Some(lap) => self.map_panel.show(ctx, selected_chunk.lap_packets(lap)),
+            None => self.map_panel.show(ctx, selected_chunk.packets.iter()),
+        };
     }
 }

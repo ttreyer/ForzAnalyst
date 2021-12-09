@@ -250,6 +250,10 @@ impl ForzaChunk {
         self.packets.iter().map(|p| p.lap_number).max().unwrap_or(0)
     }
 
+    pub fn lap_packets(&self, lap_id: u16) -> impl Iterator<Item = &ForzaPacket> + '_ {
+        self.packets.iter().filter(move |p| p.lap_number == lap_id)
+    }
+
     pub fn push(&mut self, packet: ForzaPacket) {
         self.packets.push(packet)
     }
