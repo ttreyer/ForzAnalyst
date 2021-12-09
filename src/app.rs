@@ -1,21 +1,22 @@
 use std::collections::LinkedList;
 
 use crate::egui_backend::egui;
-use crate::forza::forza_packet::{Chunks, ForzaChunk, ForzaGameMode};
+use crate::forza::forza_packet::{chunkify, read_packets, Chunks, ForzaChunk, ForzaGameMode};
 use crate::{
     forza::forza_packet::ForzaSocket,
-    gui::{chunk_panel::ChunkPanel, control_panel::ControlPanel},
+    gui::{chunk_panel::ChunkPanel, control_panel::ControlPanel, tty_plot_panel::TtyPlotPanel},
 };
 
-use egui::CtxRef;
 use egui::plot::Plot;
 use egui::Align2;
-use egui_sdl2_gl::egui::TextureId;
+use egui::CtxRef;
 use egui_sdl2_gl::egui::plot::{PlotImage, Value};
+use egui_sdl2_gl::egui::TextureId;
 
 pub struct App {
     control_panel: ControlPanel,
     chunk_panel: ChunkPanel,
+    tty_plot_panel: TtyPlotPanel,
     chunks: Chunks,
     socket: ForzaSocket,
     map: TextureId,
@@ -26,7 +27,8 @@ impl App {
         Self {
             control_panel: ControlPanel::new(),
             chunk_panel: ChunkPanel::new(),
-            chunks: LinkedList::from([ForzaChunk::new()]),
+            tty_plot_panel: TtyPlotPanel::new(),
+            chunks: chunkify(read_packets(&mut std::fs::File::open("race.ftm").unwrap())),
             socket: ForzaSocket::new(addr),
             map,
         }
@@ -62,17 +64,24 @@ impl App {
         self.chunk_panel.show(ctx, &self.chunks);
 
         egui::Window::new("Map")
-            .anchor( Align2::CENTER_CENTER, [0.0, 0.0])
+            .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
             .collapsible(false)
             .show(ctx, |ui| {
-                let image_plot = PlotImage::new(self.map, Value{x: 0f64, y: 0f64}, [2400.0, 1600.0]);
-                let plot = 
-                    Plot::new("map")
-                        .allow_drag(true)
-                        .allow_zoom(true)
-                        .data_aspect(1.0)
-                        .image(image_plot);
+                let image_plot =
+                    PlotImage::new(self.map, Value { x: 0f64, y: 0f64 }, [2400.0, 1600.0]);
+                let plot = Plot::new("map")
+                    .allow_drag(true)
+                    .allow_zoom(true)
+                    .data_aspect(1.0)
+                    .image(image_plot);
                 ui.add(plot);
             });
+
+        let selected_chunk = self
+            .chunks
+            .iter()
+            .nth(self.chunk_panel.selection.chunk_id)
+            .unwrap();
+        self.tty_plot_panel.show(ctx, &selected_chunk.packets[..]);
     }
 }
