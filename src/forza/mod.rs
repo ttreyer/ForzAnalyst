@@ -227,17 +227,24 @@ impl Socket {
 
 pub struct Chunk {
     pub packets: PacketVec,
+    pub lap_index: Vec<usize>,
 }
 
 impl Chunk {
     pub fn new() -> Self {
         Chunk {
             packets: PacketVec::with_capacity(5 * 60 * 60),
+            lap_index: Vec::new(),
         }
     }
 
     pub fn with_packets(packets: PacketVec) -> Self {
-        Chunk { packets }
+        let mut lap_index = Vec::new();
+        packets.iter().enumerate().for_each(|(packet_index, _)| {
+            Self::update_index(&packets, &mut &mut lap_index, packet_index)
+        });
+
+        Chunk { packets, lap_index }
     }
 
     pub fn finalize(&mut self) {
@@ -258,14 +265,30 @@ impl Chunk {
     }
 
     pub fn lap_count(&self) -> u16 {
-        self.packets.iter().map(|p| p.lap_number).max().unwrap_or(0)
+        self.lap_index.len() as u16
     }
 
-    pub fn lap_packets(&self, lap_id: u16) -> impl Iterator<Item = &Packet> + '_ {
-        self.packets.iter().filter(move |p| p.lap_number == lap_id)
+    pub fn lap_packets(&self, lap_id: u16) -> &[Packet] {
+        let lap_id = lap_id as usize;
+        let begin = self.lap_index[lap_id];
+        let end = *self.lap_index.get(lap_id).unwrap_or(&self.packets.len());
+        &self.packets[begin..end]
     }
 
     pub fn push(&mut self, packet: Packet) {
-        self.packets.push(packet)
+        self.packets.push(packet);
+        Self::update_index(&self.packets, &mut self.lap_index, self.packets.len() - 1);
+    }
+
+    fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, packet_index: usize) {
+        let last_packet_time = packets
+            .get(packet_index)
+            .map(|p| p.current_lap)
+            .unwrap_or(f32::INFINITY);
+        let current_packet_time = packets[packet_index].current_lap;
+
+        if current_packet_time < last_packet_time {
+            lap_index.push(packet_index);
+        }
     }
 }

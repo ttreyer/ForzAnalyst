@@ -27,17 +27,15 @@ impl MapPanel {
         }
     }
 
-    pub fn show<'a>(
-        &mut self,
-        ctx: &egui::CtxRef,
-        packets: impl Iterator<Item = &'a forza::Packet>,
-    ) {
+    pub fn show(&mut self, ctx: &egui::CtxRef, packets: &[forza::Packet]) {
         egui::Window::new("Plot").show(ctx, |ui| {
             ui.add(egui::Slider::new(&mut self.image_pos.x, -3000.0..=0.0));
             ui.add(egui::Slider::new(&mut self.image_pos.y, 0.0..=1000.0));
             ui.add(egui::Slider::new(&mut self.scale, 5.0..=7.0));
 
-            let points = packets.map(|p| Value::new(p.position_x, p.position_z));
+            let points = packets
+                .iter()
+                .map(|p| Value::new(p.position_x, p.position_z));
             let player_track = plot::Line::new(Values::from_values_iter(points));
 
             let image_plot =

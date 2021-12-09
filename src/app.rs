@@ -44,7 +44,7 @@ impl App {
         let selected_chunk = self.chunks.iter().nth(chunk_id).unwrap();
         match lap_id {
             Some(lap) => self.map_panel.show(ctx, selected_chunk.lap_packets(lap)),
-            None => self.map_panel.show(ctx, selected_chunk.packets.iter()),
+            None => self.map_panel.show(ctx, &selected_chunk.packets),
         };
     }
 
