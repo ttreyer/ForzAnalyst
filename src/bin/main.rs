@@ -49,7 +49,22 @@ fn main() {
     let mut egui_ctx = egui::CtxRef::default();
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut app = App::new("0.0.0.0:7024");
+    let map_data = include_bytes!("../../fh5_map.jpg");
+    let image = image::load_from_memory(map_data).unwrap().to_rgba8();
+    let image_dimensions = image.dimensions();
+    let image_dimensions = (image_dimensions.0 as usize, image_dimensions.1 as usize);
+
+    // Premultiply alpha:
+    let pixels: Vec<_> = image
+        .into_vec()
+        .chunks_exact(4)
+        .map(|p| egui::Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
+        .collect();
+
+    let map_id =
+        painter.new_user_texture(image_dimensions, &pixels, false);
+
+    let mut app = App::new("0.0.0.0:7024", map_id);
 
     let start_time = Instant::now();
     'running: loop {

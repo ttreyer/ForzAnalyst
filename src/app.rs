@@ -8,21 +8,27 @@ use crate::{
 };
 
 use egui::CtxRef;
+use egui::plot::Plot;
+use egui::Align2;
+use egui_sdl2_gl::egui::TextureId;
+use egui_sdl2_gl::egui::plot::{PlotImage, Value};
 
 pub struct App {
     control_panel: ControlPanel,
     chunk_panel: ChunkPanel,
     chunks: Chunks,
     socket: ForzaSocket,
+    map: TextureId,
 }
 
 impl App {
-    pub fn new(addr: &str) -> Self {
+    pub fn new(addr: &str, map: TextureId) -> Self {
         Self {
             control_panel: ControlPanel::new(),
             chunk_panel: ChunkPanel::new(),
             chunks: LinkedList::from([ForzaChunk::new()]),
             socket: ForzaSocket::new(addr),
+            map,
         }
     }
 
@@ -54,5 +60,19 @@ impl App {
         self.control_panel.show(ctx);
 
         self.chunk_panel.show(ctx, &self.chunks);
+
+        egui::Window::new("Map")
+            .anchor( Align2::CENTER_CENTER, [0.0, 0.0])
+            .collapsible(false)
+            .show(ctx, |ui| {
+                let image_plot = PlotImage::new(self.map, Value{x: 0f64, y: 0f64}, [2400.0, 1600.0]);
+                let plot = 
+                    Plot::new("map")
+                        .allow_drag(true)
+                        .allow_zoom(true)
+                        .data_aspect(1.0)
+                        .image(image_plot);
+                ui.add(plot);
+            });
     }
 }
