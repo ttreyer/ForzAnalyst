@@ -28,26 +28,10 @@ impl App {
     }
 
     pub fn process(&mut self) {
-        let data = self.socket.try_iter();
-
         if self.control_panel.is_record() {
-            for p in data {
-                if p.current_race_time == 0.0 {
-                    match (p.game_mode(), self.chunks.back().unwrap().game_mode()) {
-                        (forza::GameMode::FreeRoam, forza::GameMode::FreeRoam) => {}
-                        _ => {
-                            self.chunks.back_mut().map(|c| c.finalize());
-                            if self.chunks.back().map(|c| c.is_empty()).unwrap_or(true) {
-                                self.chunks.push_back(forza::Chunk::new())
-                            }
-                        }
-                    }
-                }
-
-                self.chunks.back_mut().unwrap().push(p);
-            }
+            chunkify(self.socket.try_iter(), &mut self.chunks);
         } else {
-            let _ = data.last();
+            self.socket.try_iter().last();
         }
     }
 
@@ -67,6 +51,8 @@ impl App {
     fn load_file(path: &Path) -> io::Result<forza::Chunks> {
         let mut file = File::open(path)?;
         let packets = forza::read_packets(&mut file)?;
-        Ok(chunkify(packets))
+        let mut chunks = forza::Chunks::new();
+        chunkify(packets.into_iter(), &mut chunks);
+        Ok(chunks)
     }
 }

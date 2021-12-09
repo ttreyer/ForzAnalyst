@@ -156,22 +156,32 @@ pub fn read_packets(input: &mut std::fs::File) -> std::io::Result<PacketVec> {
     Ok(packets)
 }
 
-pub fn chunkify(packets: PacketVec) -> LinkedList<Chunk> {
-    let mut chunks = LinkedList::from([Chunk::new()]);
+pub type Chunks = LinkedList<Chunk>;
+pub fn chunkify(packets: impl Iterator<Item = Packet>, chunks: &mut Chunks) {
+    if chunks.is_empty() {
+        chunks.push_back(Chunk::new())
+    };
+
     for p in packets {
         if p.current_race_time == 0.0 {
             match (p.game_mode(), chunks.back().unwrap().game_mode()) {
-                (GameMode::FreeRoam, GameMode::FreeRoam) => {}
-                _ => chunks.push_back(Chunk::new()),
+                (GameMode::FreeRoam, GameMode::FreeRoam) => {
+                    // Doing nothin here, in order to
+                    // merge the two FreeRoam chunks together
+                }
+                (_, _) => {
+                    // Re-use last chunk if empty
+                    if !chunks.back().unwrap().is_empty() {
+                        chunks.back_mut().unwrap().finalize();
+                        chunks.push_back(Chunk::new())
+                    }
+                }
             }
         }
 
         chunks.back_mut().unwrap().push(p);
     }
-    return chunks;
 }
-
-pub type Chunks = LinkedList<Chunk>;
 
 pub struct Socket {
     thread: JoinHandle<()>,

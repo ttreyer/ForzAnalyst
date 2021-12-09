@@ -1,5 +1,3 @@
-use std::collections::LinkedList;
-
 use crate::egui_backend::egui;
 use crate::forza;
 
@@ -59,7 +57,7 @@ impl ChunkPanel {
             .header_response
     }
 
-    pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<forza::Chunk>) {
+    pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &forza::Chunks) {
         egui::Window::new("Chunk").show(ctx, |ui| {
             let mut packets_count = 0usize;
 
