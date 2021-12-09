@@ -1,7 +1,7 @@
 use std::collections::LinkedList;
 
 use crate::egui_backend::egui;
-use crate::forza::forza_packet::{ForzaChunk, ForzaGameMode};
+use crate::forza;
 
 type ChunkID = usize;
 type LapID = Option<u16>;
@@ -36,7 +36,7 @@ impl ChunkPanel {
         &mut self,
         ui: &mut egui::Ui,
         chunk_id: usize,
-        chunk: &ForzaChunk,
+        chunk: &forza::Chunk,
     ) -> egui::Response {
         egui::CollapsingHeader::new("Race")
             .id_source(chunk_id)
@@ -59,19 +59,19 @@ impl ChunkPanel {
             .header_response
     }
 
-    pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<ForzaChunk>) {
+    pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &LinkedList<forza::Chunk>) {
         egui::Window::new("Chunk").show(ctx, |ui| {
             let mut packets_count = 0usize;
 
             for (chunk_id, chunk) in chunks.iter().enumerate() {
                 packets_count += chunk.packets.len();
                 match chunk.game_mode() {
-                    ForzaGameMode::FreeRoam => {
+                    forza::GameMode::FreeRoam => {
                         if self.show_free_roam(ui, chunk_id).clicked() {
                             self.select(chunk_id, None)
                         }
                     }
-                    ForzaGameMode::Race => {
+                    forza::GameMode::Race => {
                         if self.show_race(ui, chunk_id, &chunk).clicked() {
                             self.select(chunk_id, None);
                         }

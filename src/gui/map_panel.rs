@@ -1,7 +1,7 @@
 use std::ops::Mul;
 
 use crate::egui_backend::egui;
-use crate::forza::forza_packet::ForzaPacket;
+use crate::forza;
 
 use egui::plot;
 use egui::plot::{PlotImage, Value, Values};
@@ -27,7 +27,11 @@ impl MapPanel {
         }
     }
 
-    pub fn show<'a>(&mut self, ctx: &egui::CtxRef, packets: impl Iterator<Item = &'a ForzaPacket>) {
+    pub fn show<'a>(
+        &mut self,
+        ctx: &egui::CtxRef,
+        packets: impl Iterator<Item = &'a forza::Packet>,
+    ) {
         egui::Window::new("Plot").show(ctx, |ui| {
             ui.add(egui::Slider::new(&mut self.image_pos.x, -3000.0..=0.0));
             ui.add(egui::Slider::new(&mut self.image_pos.y, 0.0..=1000.0));

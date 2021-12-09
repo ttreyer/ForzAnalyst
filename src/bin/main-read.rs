@@ -1,9 +1,15 @@
-use forzanalyst::forza::forza_packet::*;
+use forzanalyst::forza;
 use std::{fs::File, mem::replace};
 
-fn main() {
-    let input = std::env::args().nth(1).unwrap_or("output.ftm".to_string());
-    let packets = read_packets(&mut File::open(input).unwrap());
+fn main() -> std::io::Result<()> {
+    let input = std::env::args()
+        .nth(1)
+        .expect("usage: main-read <input.ftm> <output.ftm>");
+    let output = std::env::args()
+        .nth(2)
+        .expect("usage: main-read <input.ftm> <output.ftm>");
+
+    let packets = forza::read_packets(&mut File::open(input)?)?;
 
     let mut last_packet_timestamp = 0;
     let dedup_packets = packets
@@ -11,10 +17,9 @@ fn main() {
         .filter(|p| p.is_race_on == 1)
         .filter(|p| replace(&mut last_packet_timestamp, p.timestamp_ms) != p.timestamp_ms);
 
-    let output = std::env::args()
-        .nth(2)
-        .unwrap_or("output-dedup.ftm".to_string());
-    write_packets(dedup_packets, &mut File::create(output).unwrap());
+    forza::write_packets(dedup_packets, &mut File::create(output)?)?;
+
+    Ok(())
 
     // for i in 0..10 {
     //     println!("{:?}", packets[i]);
