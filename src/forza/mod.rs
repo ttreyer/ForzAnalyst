@@ -209,7 +209,7 @@ impl Socket {
                 }
 
                 last_packet_timestamp = packet.timestamp_ms;
-                sender.send(packet).unwrap();
+                sender.send(packet).ok();
             }
         });
 
@@ -285,7 +285,7 @@ impl Chunk {
 
     fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, packet_index: usize) {
         match &packets[..=packet_index] {
-            [.., last, current] => {
+            [.., last, current] if current.distance_traveled > last.distance_traveled => {
                 if current.current_lap < last.current_lap {
                     lap_index.push(packet_index);
                 }
