@@ -19,19 +19,19 @@ impl MapPanel {
         Self {
             image: image_tex_id,
             image_pos: Value {
-                x: -1940.0,
-                y: 450.0,
+                x: -1978.0,
+                y: 435.0,
             },
             image_size: [3200.0, 1800.0].into(),
-            scale: 6.0,
+            scale: 5.92,
         }
     }
 
     pub fn show(&mut self, ctx: &egui::CtxRef, packets: &[forza::Packet]) {
-        egui::Window::new("Plot").show(ctx, |ui| {
-            ui.add(egui::Slider::new(&mut self.image_pos.x, -3000.0..=0.0));
-            ui.add(egui::Slider::new(&mut self.image_pos.y, 0.0..=1000.0));
-            ui.add(egui::Slider::new(&mut self.scale, 5.0..=7.0));
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.add(egui::Slider::new(&mut self.image_pos.x, -2000.0..=-1900.0));
+            ui.add(egui::Slider::new(&mut self.image_pos.y, 400.0..=500.0));
+            ui.add(egui::Slider::new(&mut self.scale, 5.8..=6.2));
 
             let points = packets
                 .iter()
