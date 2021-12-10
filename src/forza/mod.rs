@@ -234,7 +234,7 @@ impl Chunk {
     pub fn new() -> Self {
         Chunk {
             packets: PacketVec::with_capacity(5 * 60 * 60),
-            lap_index: Vec::new(),
+            lap_index: vec![0],
         }
     }
 
@@ -271,7 +271,10 @@ impl Chunk {
     pub fn lap_packets(&self, lap_id: u16) -> &[Packet] {
         let lap_id = lap_id as usize;
         let begin = self.lap_index[lap_id];
-        let end = *self.lap_index.get(lap_id).unwrap_or(&self.packets.len());
+        let end = *self
+            .lap_index
+            .get(lap_id + 1)
+            .unwrap_or(&self.packets.len());
         &self.packets[begin..end]
     }
 
@@ -281,14 +284,13 @@ impl Chunk {
     }
 
     fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, packet_index: usize) {
-        let last_packet_time = packets
-            .get(packet_index)
-            .map(|p| p.current_lap)
-            .unwrap_or(f32::INFINITY);
-        let current_packet_time = packets[packet_index].current_lap;
-
-        if current_packet_time < last_packet_time {
-            lap_index.push(packet_index);
+        match &packets[..=packet_index] {
+            [.., last, current] => {
+                if current.current_lap < last.current_lap {
+                    lap_index.push(packet_index);
+                }
+            }
+            _ => {}
         }
     }
 }

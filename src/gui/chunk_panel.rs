@@ -42,7 +42,7 @@ impl ChunkPanel {
             .selected(self.is_selected(chunk_id, None))
             .default_open(true)
             .show(ui, |ui| {
-                for lap_id in 0..=chunk.lap_count() {
+                for lap_id in 0..chunk.lap_count() {
                     if ui
                         .selectable_label(
                             self.is_selected(chunk_id, Some(lap_id)),
