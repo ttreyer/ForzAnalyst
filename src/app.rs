@@ -41,11 +41,14 @@ impl App {
         self.chunk_panel.show(ctx, &self.chunks);
 
         let ChunkSelection(chunk_id, lap_id) = self.chunk_panel.selection;
-        let selected_chunk = self.chunks.iter().nth(chunk_id).unwrap();
-        match lap_id {
-            Some(lap) => self.map_panel.show(ctx, selected_chunk.lap_packets(lap)),
-            None => self.map_panel.show(ctx, &selected_chunk.packets),
-        };
+        if let Some(selected_chunk) = self.chunks.iter().nth(chunk_id) {
+            match lap_id {
+                Some(lap) => self.map_panel.show(ctx, selected_chunk.lap_packets(lap)),
+                None => self.map_panel.show(ctx, &selected_chunk.packets),
+            }
+        } else {
+            self.map_panel.show(ctx, &[]);
+        }
     }
 
     fn load_file(path: &Path) -> io::Result<forza::Chunks> {
