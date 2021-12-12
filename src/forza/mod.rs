@@ -141,7 +141,10 @@ pub fn write_packets<'a>(
 pub fn read_packets(input: &mut std::fs::File) -> std::io::Result<PacketVec> {
     let input_len = input.metadata()?.len() as usize;
     if input_len % size_of::<Packet>() != 0 {
-        panic!("Invalid size file.");
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Invalid file size.",
+        ));
     }
 
     let packets_count = input_len / size_of::<Packet>();

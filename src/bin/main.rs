@@ -9,8 +9,8 @@ use forzanalyst::app::App;
 use sdl2::video::SwapInterval;
 use std::time::Instant;
 
-const SCREEN_WIDTH: u32 = 800;
-const SCREEN_HEIGHT: u32 = 600;
+const SCREEN_WIDTH: u32 = 1600;
+const SCREEN_HEIGHT: u32 = 1200;
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
