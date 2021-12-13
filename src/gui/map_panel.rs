@@ -10,6 +10,7 @@ use egui::plot::{PlotImage, Value, Values};
 use egui::{TextureId, Vec2};
 
 pub struct MapPanel {
+    pointer_coord: Option<Value>,
     image: TextureId,
     image_pos: Value,
     image_size: Vec2,
@@ -20,6 +21,7 @@ pub struct MapPanel {
 impl MapPanel {
     pub fn new(image_tex_id: TextureId) -> Self {
         Self {
+            pointer_coord: None,
             image: image_tex_id,
             image_pos: Value {
                 x: -1755.0,
@@ -69,16 +71,18 @@ impl MapPanel {
             let image_plot =
                 PlotImage::new(self.image, self.image_pos, self.image_size.mul(self.scale));
 
-            let plot = plot::Plot::new("Map").data_aspect(1.0).image(image_plot);
-            ui.add(
-                lines
-                    .into_iter()
-                    .map(|points| {
-                        plot::Line::new(Values::from_values(points))
-                            .color(egui::Color32::from_rgb(0, 128, 255))
-                    })
-                    .fold(plot, |plot, track| plot.line(track)),
-            );
+            plot::Plot::new("Map").data_aspect(1.0).show(ui, |plot_ui| {
+                self.pointer_coord = match plot_ui.plot_hovered() {
+                    true => plot_ui.pointer_coordinate(),
+                    false => None,
+                };
+
+                plot_ui.image(image_plot);
+                for line in lines {
+                    let track = plot::Line::new(Values::from_values(line)).color(egui::Color32::from_rgb(255, 0, 255));
+                    plot_ui.line(track);
+                }
+            });
         });
     }
 }

@@ -80,8 +80,7 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 [[package]]
 name = "egui"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c8d416a3343cbfc6f4d17bb1cba46b4d7efecb9ee541967763e0b5e04e5fae7"
+source = "git+https://github.com/emilk/egui.git#5ec14867c88f137bbb5a25a2ed5d7f5d773fadcd"
 dependencies = [
  "ahash",
  "epaint",
@@ -91,7 +90,7 @@ dependencies = [
 [[package]]
 name = "egui_sdl2_gl"
 version = "0.15.0"
-source = "git+https://github.com/ArjunNair/egui_sdl2_gl.git#70cde948a769ce841c72360b80da73e16b675c4f"
+source = "git+https://github.com/ttreyer/egui_sdl2_gl.git#230092e9117f7d25eb96d509a2da658764bdde70"
 dependencies = [
  "egui",
  "gl",
@@ -101,14 +100,12 @@ dependencies = [
 [[package]]
 name = "emath"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24a1aaa922d55da6a2bf32957c3d153e7fb9d52ed8d69777a75092240172eb6e"
+source = "git+https://github.com/emilk/egui.git#5ec14867c88f137bbb5a25a2ed5d7f5d773fadcd"
 
 [[package]]
 name = "epaint"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16bb4d3b8bbbd132c99d2a5efec8567e8b6d09b742f758ae6cf1e4b104fe0231"
+source = "git+https://github.com/emilk/egui.git#5ec14867c88f137bbb5a25a2ed5d7f5d773fadcd"
 dependencies = [
  "ab_glyph",
  "ahash",
@@ -192,9 +189,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.111"
+version = "0.2.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e167738f1866a7ec625567bae89ca0d44477232a4f7c52b1c7f2adc2c98804f"
+checksum = "1b03d17f364a3a042d5e5d46b053bbbf82c92c9430c592dd4c064dc6ee997125"
 
 [[package]]
 name = "log"

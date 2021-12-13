@@ -69,17 +69,14 @@ fn main() {
         app.process();
 
         egui_state.input.time = Some(start_time.elapsed().as_secs_f64());
-        egui_ctx.begin_frame(egui_state.input.take());
 
-        app.show(&egui_ctx);
+        let (output, shapes) = egui_ctx.run(egui_state.input.take(), |ctx| {
+            app.show(&ctx);
+        });
 
-        let (egui_output, paint_cmds) = egui_ctx.end_frame();
-        // Process ouput
-        egui_state.process_output(&window, &egui_output);
+        let paint_jobs = egui_ctx.tessellate(shapes);
 
-        let paint_jobs = egui_ctx.tessellate(paint_cmds);
-
-        if !egui_output.needs_repaint {
+        if !output.needs_repaint {
             match event_pump.wait_event_timeout(10) {
                 Some(Event::Quit { .. }) => break 'running,
                 Some(event) => {
