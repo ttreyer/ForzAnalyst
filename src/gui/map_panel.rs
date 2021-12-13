@@ -52,7 +52,7 @@ impl MapPanel {
 
             // The maximum number of points the plot can display is ~10k
             // This step is used to take 1 sample ever `step` to cap the number of points.
-            let step = f64::ceil(packets.len() as f64 / self.len as f64) as usize;
+            let step = f64::ceil((packets.len() as f64 + 1f64) / self.len as f64) as usize;
 
             let mut last_distance = f32::NEG_INFINITY;
             let mut current_line = Vec::new();

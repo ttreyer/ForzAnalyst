@@ -231,6 +231,7 @@ impl Socket {
 pub struct Chunk {
     pub packets: PacketVec,
     pub lap_index: Vec<usize>,
+    pub lap_keep: Vec<bool>,
 }
 
 impl Chunk {
@@ -238,16 +239,18 @@ impl Chunk {
         Chunk {
             packets: PacketVec::with_capacity(5 * 60 * 60),
             lap_index: vec![0],
+            lap_keep: vec![true],
         }
     }
 
     pub fn with_packets(packets: PacketVec) -> Self {
         let mut lap_index = Vec::new();
+        let mut lap_keep = Vec::new();
         packets.iter().enumerate().for_each(|(packet_index, _)| {
-            Self::update_index(&packets, &mut &mut lap_index, packet_index)
+            Self::update_index(&packets, &mut &mut lap_index, &mut lap_keep, packet_index)
         });
-
-        Chunk { packets, lap_index }
+        
+        Chunk { packets, lap_index, lap_keep }
     }
 
     pub fn finalize(&mut self) {
@@ -283,14 +286,15 @@ impl Chunk {
 
     pub fn push(&mut self, packet: Packet) {
         self.packets.push(packet);
-        Self::update_index(&self.packets, &mut self.lap_index, self.packets.len() - 1);
+        Self::update_index(&self.packets, &mut self.lap_index, &mut self.lap_keep, self.packets.len() - 1);
     }
 
-    fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, packet_index: usize) {
+    fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, lap_keep: &mut Vec<bool>, packet_index: usize) {
         match &packets[..=packet_index] {
             [.., last, current] if current.distance_traveled > last.distance_traveled => {
                 if current.current_lap < last.current_lap {
                     lap_index.push(packet_index);
+                    lap_keep.push(true);
                 }
             }
             _ => {}

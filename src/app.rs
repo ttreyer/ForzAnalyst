@@ -33,6 +33,34 @@ impl App {
         } else {
             self.socket.try_iter().last();
         }
+
+        if let Some(chunk_selection) = self.chunk_panel.trash_chunk {
+            match chunk_selection {
+                ChunkSelection(chunk_id, None) => {
+                    Self::remove_chunk(&mut self.chunks, chunk_id);
+                },
+                ChunkSelection(chunk_id, Some(lap_id)) => {
+                    let chunk = self.chunks.iter_mut().nth(chunk_id);
+
+                    if let Some(chunk) = chunk {
+                        chunk.lap_keep[lap_id as usize] = false;
+                        let keep = chunk.lap_keep.iter().fold(false, |accum, i| accum | i);
+                        
+                        if !keep {
+                            Self::remove_chunk(&mut self.chunks, chunk_id)
+                        }
+                    }
+                }
+            }
+
+            self.chunk_panel.trash_chunk = None;
+        }
+    }
+
+    fn remove_chunk(chunks: &mut forza::Chunks, id: ChunkID) {
+        let mut split_list = chunks.split_off(id);
+        split_list.pop_front();
+        chunks.append(&mut split_list);
     }
 
     pub fn show(&mut self, ctx: &CtxRef) {
