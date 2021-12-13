@@ -8,7 +8,4 @@ edition = "2021"
 [dependencies]
 tinyfiledialogs = "3.0"
 egui_sdl2_gl = { git = "https://github.com/ArjunNair/egui_sdl2_gl.git" }
-image = { version = "0.23.14", default-features = false, features = [
-  "jpeg",
-  "avif-decoder",
-] }
+image = { version = "0.23.14", default-features = false, features = ["jpeg"] }

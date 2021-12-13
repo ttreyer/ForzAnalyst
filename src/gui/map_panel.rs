@@ -22,11 +22,11 @@ impl MapPanel {
         Self {
             image: image_tex_id,
             image_pos: Value {
-                x: -1978.0,
-                y: 435.0,
+                x: -1755.0,
+                y: 922.0,
             },
-            image_size: [3200.0, 1800.0].into(),
-            scale: 5.92,
+            image_size: [5615.0, 3245.0].into(),
+            scale: 3.475,
             len: 2000,
         }
     }
