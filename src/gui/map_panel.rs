@@ -8,6 +8,7 @@ use crate::forza;
 use egui::plot;
 use egui::plot::{PlotImage, Value, Values};
 use egui::{TextureId, Vec2};
+use egui_sdl2_gl::egui::{RichText, Align};
 
 pub struct MapPanel {
     pointer_coord: Option<Value>,
@@ -38,7 +39,8 @@ impl MapPanel {
             // ui.add(egui::Slider::new(&mut self.image_pos.x, -2000.0..=-1900.0));
             // ui.add(egui::Slider::new(&mut self.image_pos.y, 400.0..=500.0));
             // ui.add(egui::Slider::new(&mut self.scale, 5.8..=6.2));
-            ui.add(egui::Slider::new(&mut self.len, 0..=10000));
+            // ui.add(egui::Slider::new(&mut self.len, 0..=10000));
+
 
             // let log = packets
             //     .iter()
@@ -55,6 +57,17 @@ impl MapPanel {
             // The maximum number of points the plot can display is ~10k
             // This step is used to take 1 sample ever `step` to cap the number of points.
             let step = f64::ceil((packets.len() as f64 + 1f64) / self.len as f64) as usize;
+
+            if step > 1 {
+                let available_space = ui.available_size_before_wrap();
+                let size = egui::vec2(available_space.x, 12.0);
+                let (rect, _) = ui.allocate_at_least(size, egui::Sense::hover());
+
+                let painter = ui.painter();
+
+                painter.rect_filled(rect, 0.0, egui::Color32::from_rgb(250, 181, 127));
+                painter.text(rect.center(), egui::Align2::CENTER_CENTER, "Data are sampled on the map", egui::TextStyle::Small, egui::Color32::BLACK);
+            }
 
             let mut last_distance = f32::NEG_INFINITY;
             let mut current_line = Vec::new();
@@ -92,6 +105,7 @@ impl MapPanel {
                             .width(line_width),
                     );
                 }
+
             });
         });
     }
