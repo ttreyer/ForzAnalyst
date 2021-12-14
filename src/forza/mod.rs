@@ -8,6 +8,8 @@ use std::{
     thread::JoinHandle,
 };
 
+use zstd::{Decoder, Encoder};
+
 #[repr(C)]
 #[derive(Debug, Default)]
 pub struct Packet {
@@ -186,6 +188,43 @@ pub fn chunkify(packets: impl Iterator<Item = Packet>, chunks: &mut Chunks) {
     }
 }
 
+pub fn read_chunks(input: &mut std::fs::File) -> std::io::Result<Chunks> {
+    let mut input = Decoder::new(input)?;
+
+    let mut packets = PacketVec::with_capacity(1024);
+    loop {
+        let mut packet = Packet::default();
+        match input.read_exact(packet.as_buf_mut()) {
+            Err(error) => match error.kind() {
+                std::io::ErrorKind::UnexpectedEof => break,
+                _ => return Err(error),
+            },
+            _ => {}
+        };
+        packets.push(packet);
+    }
+    println!("Packets read: {}", packets.len());
+
+    let mut chunks = LinkedList::new();
+    chunkify(packets.into_iter(), &mut chunks);
+
+    Ok(chunks)
+}
+
+pub fn write_chunks<'a>(
+    chunks: impl Iterator<Item = &'a Chunk>,
+    output: &mut std::fs::File,
+) -> std::io::Result<()> {
+    let mut output = Encoder::new(output, 0)?;
+    for chunk in chunks {
+        for packet in &chunk.packets {
+            output.write_all(packet.as_buf())?;
+        }
+    }
+    output.finish()?;
+    Ok(())
+}
+
 pub struct Socket {
     thread: JoinHandle<()>,
     receiver: Receiver<Packet>,
@@ -249,8 +288,12 @@ impl Chunk {
         packets.iter().enumerate().for_each(|(packet_index, _)| {
             Self::update_index(&packets, &mut &mut lap_index, &mut lap_keep, packet_index)
         });
-        
-        Chunk { packets, lap_index, lap_keep }
+
+        Chunk {
+            packets,
+            lap_index,
+            lap_keep,
+        }
     }
 
     pub fn finalize(&mut self) {
@@ -286,10 +329,20 @@ impl Chunk {
 
     pub fn push(&mut self, packet: Packet) {
         self.packets.push(packet);
-        Self::update_index(&self.packets, &mut self.lap_index, &mut self.lap_keep, self.packets.len() - 1);
+        Self::update_index(
+            &self.packets,
+            &mut self.lap_index,
+            &mut self.lap_keep,
+            self.packets.len() - 1,
+        );
     }
 
-    fn update_index(packets: &[Packet], lap_index: &mut Vec<usize>, lap_keep: &mut Vec<bool>, packet_index: usize) {
+    fn update_index(
+        packets: &[Packet],
+        lap_index: &mut Vec<usize>,
+        lap_keep: &mut Vec<bool>,
+        packet_index: usize,
+    ) {
         match &packets[..=packet_index] {
             [.., last, current] if current.distance_traveled > last.distance_traveled => {
                 if current.current_lap < last.current_lap {

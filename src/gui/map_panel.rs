@@ -8,7 +8,6 @@ use crate::forza;
 use egui::plot;
 use egui::plot::{PlotImage, Value, Values};
 use egui::{TextureId, Vec2};
-use egui_sdl2_gl::egui::{RichText, Align};
 
 pub struct MapPanel {
     pointer_coord: Option<Value>,
@@ -41,7 +40,6 @@ impl MapPanel {
             // ui.add(egui::Slider::new(&mut self.scale, 5.8..=6.2));
             // ui.add(egui::Slider::new(&mut self.len, 0..=10000));
 
-
             // let log = packets
             //     .iter()
             //     .filter(|p| !p.position_x.is_normal())
@@ -66,7 +64,13 @@ impl MapPanel {
                 let painter = ui.painter();
 
                 painter.rect_filled(rect, 0.0, egui::Color32::from_rgb(250, 181, 127));
-                painter.text(rect.center(), egui::Align2::CENTER_CENTER, "Data are sampled on the map", egui::TextStyle::Small, egui::Color32::BLACK);
+                painter.text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    "Data are sampled on the map",
+                    egui::TextStyle::Small,
+                    egui::Color32::BLACK,
+                );
             }
 
             let mut last_distance = f32::NEG_INFINITY;
@@ -105,7 +109,6 @@ impl MapPanel {
                             .width(line_width),
                     );
                 }
-
             });
         });
     }

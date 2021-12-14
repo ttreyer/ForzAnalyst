@@ -1,5 +1,5 @@
 use crate::egui_backend::egui;
-use crate::forza::{self, chunkify, write_packets};
+use crate::forza::{self, chunkify};
 use crate::gui::{chunk_panel::*, control_panel::*, map_panel::*};
 
 use egui::CtxRef;
@@ -22,7 +22,7 @@ impl App {
             control_panel: ControlPanel::new(),
             chunk_panel: ChunkPanel::new(),
             map_panel: MapPanel::new(map),
-            chunks: Self::load_file("race.ftm").unwrap(),
+            chunks: Self::load_file("goliath_zstd.ftm").unwrap(),
             socket: forza::Socket::new(addr),
         }
     }
@@ -38,14 +38,14 @@ impl App {
             match chunk_selection {
                 ChunkSelection(chunk_id, None) => {
                     Self::remove_chunk(&mut self.chunks, chunk_id);
-                },
+                }
                 ChunkSelection(chunk_id, Some(lap_id)) => {
                     let chunk = self.chunks.iter_mut().nth(chunk_id);
 
                     if let Some(chunk) = chunk {
                         chunk.lap_keep[lap_id as usize] = false;
                         let keep = chunk.lap_keep.iter().fold(false, |accum, i| accum | i);
-                        
+
                         if !keep {
                             Self::remove_chunk(&mut self.chunks, chunk_id)
                         }
@@ -100,18 +100,10 @@ impl App {
     }
 
     fn load_file(path: &str) -> io::Result<forza::Chunks> {
-        let mut file = File::open(path)?;
-        let packets = forza::read_packets(&mut file)?;
-        let mut chunks = forza::Chunks::new();
-        chunkify(packets.into_iter(), &mut chunks);
-        Ok(chunks)
+        forza::read_chunks(&mut File::open(path)?)
     }
 
     fn store_file(path: &str, chunks: &forza::Chunks) -> io::Result<()> {
-        let mut file = File::create(path)?;
-        for chunk in chunks {
-            write_packets(chunk.packets.iter(), &mut file)?;
-        }
-        Ok(())
+        forza::write_chunks(chunks.iter(), &mut File::create(path)?)
     }
 }
