@@ -267,33 +267,27 @@ impl Socket {
     }
 }
 
+pub struct Lap(pub u16, pub usize, pub Option<usize>);
 pub struct Chunk {
     pub packets: PacketVec,
-    pub lap_index: Vec<usize>,
-    pub lap_keep: Vec<bool>,
+    pub lap_index: Vec<Lap>,
 }
 
 impl Chunk {
     pub fn new() -> Self {
         Chunk {
             packets: PacketVec::with_capacity(5 * 60 * 60),
-            lap_index: vec![0],
-            lap_keep: vec![true],
+            lap_index: vec![],
         }
     }
 
     pub fn with_packets(packets: PacketVec) -> Self {
         let mut lap_index = Vec::new();
-        let mut lap_keep = Vec::new();
         packets.iter().enumerate().for_each(|(packet_index, _)| {
-            Self::update_index(&packets, &mut &mut lap_index, &mut lap_keep, packet_index)
+            Self::update_index(&packets, &mut &mut lap_index, packet_index)
         });
 
-        Chunk {
-            packets,
-            lap_index,
-            lap_keep,
-        }
+        Chunk { packets, lap_index }
     }
 
     pub fn finalize(&mut self) {
@@ -317,39 +311,51 @@ impl Chunk {
         self.lap_index.len() as u16
     }
 
-    pub fn lap_packets(&self, lap_id: u16) -> &[Packet] {
-        let lap_id = lap_id as usize;
-        let begin = self.lap_index[lap_id];
-        let end = *self
-            .lap_index
-            .get(lap_id + 1)
-            .unwrap_or(&self.packets.len());
-        &self.packets[begin..end]
+    pub fn lap_packets(&self, lap_num: u16) -> &[Packet] {
+        if let Some((_, begin, end)) = self.lap_range(lap_num) {
+            &self.packets[begin..end]
+        } else {
+            &[]
+        }
+    }
+
+    fn lap_range(&self, lap_num: u16) -> Option<(usize, usize, usize)> {
+        self.lap_index
+            .iter()
+            .enumerate()
+            .find(|(_, l)| l.0 == lap_num)
+            .map(|(lap_idx, lap)| (lap_idx, lap.1, lap.2.unwrap_or(self.packets.len())))
+    }
+
+    pub fn remove_lap(&mut self, lap_num: u16) {
+        if let Some((lap_idx, begin, end)) = self.lap_range(lap_num) {
+            drop(self.packets.drain(begin..end));
+            self.lap_index.remove(lap_idx);
+
+            let offset = end - begin;
+            self.lap_index.iter_mut().skip(lap_idx).for_each(|l| {
+                l.1 -= offset;
+                l.2 = l.2.map(|end| end - offset);
+            });
+        }
     }
 
     pub fn push(&mut self, packet: Packet) {
         self.packets.push(packet);
-        Self::update_index(
-            &self.packets,
-            &mut self.lap_index,
-            &mut self.lap_keep,
-            self.packets.len() - 1,
-        );
+        Self::update_index(&self.packets, &mut self.lap_index, self.packets.len() - 1);
     }
 
-    fn update_index(
-        packets: &[Packet],
-        lap_index: &mut Vec<usize>,
-        lap_keep: &mut Vec<bool>,
-        packet_index: usize,
-    ) {
+    fn update_index(packets: &[Packet], lap_index: &mut Vec<Lap>, packet_index: usize) {
         match &packets[..=packet_index] {
-            [.., last, current] if current.distance_traveled > last.distance_traveled => {
-                if current.current_lap < last.current_lap {
-                    lap_index.push(packet_index);
-                    lap_keep.push(true);
+            [.., last, current] => {
+                if current.lap_number != last.lap_number {
+                    if let Some(Lap(_, _, end)) = lap_index.last_mut() {
+                        *end = Some(packet_index);
+                    }
+                    lap_index.push(Lap(current.lap_number, packet_index, None));
                 }
             }
+            [current] => lap_index.push(Lap(current.lap_number, packet_index, None)),
             _ => {}
         }
     }

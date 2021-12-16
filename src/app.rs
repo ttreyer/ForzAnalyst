@@ -22,7 +22,7 @@ impl App {
             control_panel: ControlPanel::new(),
             chunk_panel: ChunkPanel::new(),
             map_panel: MapPanel::new(map),
-            chunks: Self::load_file("goliath_zstd.ftm").unwrap(),
+            chunks: Self::load_file("goliath.ftm").unwrap(),
             socket: forza::Socket::new(addr),
         }
     }
@@ -39,16 +39,11 @@ impl App {
                 ChunkSelection(chunk_id, None) => {
                     Self::remove_chunk(&mut self.chunks, chunk_id);
                 }
-                ChunkSelection(chunk_id, Some(lap_id)) => {
-                    let chunk = self.chunks.iter_mut().nth(chunk_id);
-
-                    if let Some(chunk) = chunk {
-                        chunk.lap_keep[lap_id as usize] = false;
-                        let keep = chunk.lap_keep.iter().fold(false, |accum, i| accum | i);
-
-                        if !keep {
-                            Self::remove_chunk(&mut self.chunks, chunk_id)
-                        }
+                ChunkSelection(chunk_id, Some(lap_num)) => {
+                    let chunk = self.chunks.iter_mut().nth(chunk_id).unwrap();
+                    chunk.remove_lap(lap_num);
+                    if chunk.packets.is_empty() {
+                        Self::remove_chunk(&mut self.chunks, chunk_id);
                     }
                 }
             }

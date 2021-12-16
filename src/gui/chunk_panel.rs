@@ -1,5 +1,7 @@
+use std::mem::replace;
+
 use crate::egui_backend::egui;
-use crate::forza;
+use crate::forza::{self, Lap};
 
 pub type ChunkID = usize;
 pub type LapID = Option<u16>;
@@ -54,24 +56,24 @@ impl ChunkPanel {
             .selected(self.is_selected(chunk_id, None))
             .default_open(true)
             .show(ui, |ui| {
-                for lap_id in 0..chunk.lap_count() {
-                    if !chunk.lap_keep[lap_id as usize] {
-                        continue;
-                    }
-
+                // let mut last_lap = 0u16;
+                for Lap(lap_num, _, _) in &chunk.lap_index {
+                    // if *lap_num < replace(&mut last_lap, *lap_num) {
+                    //     continue;
+                    // }
                     ui.horizontal(|ui| {
                         if ui
                             .selectable_label(
-                                self.is_selected(chunk_id, Some(lap_id)),
-                                format!("Lap {}", lap_id),
+                                self.is_selected(chunk_id, Some(*lap_num)),
+                                format!("Lap {}", lap_num + 1),
                             )
                             .clicked()
                         {
-                            self.select(chunk_id, Some(lap_id))
+                            self.select(chunk_id, Some(*lap_num))
                         }
 
                         if ui.button("🗑").clicked() {
-                            self.trash_chunk(chunk_id, Some(lap_id));
+                            self.trash_chunk(chunk_id, Some(*lap_num));
                         }
                     });
                 }
