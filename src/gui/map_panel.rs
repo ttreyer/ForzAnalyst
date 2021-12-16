@@ -95,11 +95,11 @@ impl MapPanel {
                 };
 
                 let line_color = egui::Color32::from_rgb(255, 0, 255);
-                let mut line_width = 2000.0 / plot_ui.plot_bounds().height() as f32;
+                let mut line_width = 4000.0 / plot_ui.plot_bounds().height() as f32;
                 if line_width > 100.0 {
                     line_width = 0.1;
                 }
-                line_width = line_width.clamp(0.5, 8.0);
+                line_width = line_width.clamp(0.5, 12.0);
 
                 plot_ui.image(image_plot);
                 for line in lines {
