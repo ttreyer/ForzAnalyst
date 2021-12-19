@@ -1,7 +1,7 @@
 use std::{
     collections::LinkedList,
     intrinsics::transmute,
-    io::{Read, Write},
+    io::{BufWriter, Read, Write},
     mem::size_of,
     net::UdpSocket,
     sync::mpsc::{Iter, Receiver, TryIter},
@@ -131,6 +131,7 @@ pub fn write_packets<'a>(
     packets: impl Iterator<Item = &'a Packet>,
     output: &mut std::fs::File,
 ) -> std::io::Result<()> {
+    let mut output = std::io::BufWriter::new(output);
     let mut packet_count = 0;
     for packet in packets {
         packet_count += 1;
@@ -149,6 +150,7 @@ pub fn read_packets(input: &mut std::fs::File) -> std::io::Result<PacketVec> {
         ));
     }
 
+    let mut input = std::io::BufReader::new(input);
     let packets_count = input_len / size_of::<Packet>();
     let mut packets = PacketVec::with_capacity(packets_count);
     for _ in 0..packets_count {
@@ -215,6 +217,7 @@ pub fn write_chunks<'a>(
     chunks: impl Iterator<Item = &'a Chunk>,
     output: &mut std::fs::File,
 ) -> std::io::Result<()> {
+    let output = BufWriter::new(output);
     let mut output = Encoder::new(output, 0)?;
     for chunk in chunks {
         for packet in &chunk.packets {
