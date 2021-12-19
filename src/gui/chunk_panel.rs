@@ -81,17 +81,19 @@ impl ChunkPanel {
 
     pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &forza::Chunks) {
         egui::Window::new("Chunk").show(ctx, |ui| {
-            let mut packets_count = 0usize;
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                let mut packets_count = 0usize;
 
-            for (chunk_id, chunk) in chunks.iter().enumerate() {
-                packets_count += chunk.packets.len();
-                match chunk.game_mode() {
-                    forza::GameMode::FreeRoam => self.show_free_roam(ui, chunk_id),
-                    forza::GameMode::Race => self.show_race(ui, chunk_id, &chunk),
+                for (chunk_id, chunk) in chunks.iter().enumerate() {
+                    packets_count += chunk.packets.len();
+                    match chunk.game_mode() {
+                        forza::GameMode::FreeRoam => self.show_free_roam(ui, chunk_id),
+                        forza::GameMode::Race => self.show_race(ui, chunk_id, &chunk),
+                    }
                 }
-            }
 
-            ui.label(format!("Packets: {}", packets_count));
+                ui.label(format!("Packets: {}", packets_count));
+            });
         });
     }
 }
