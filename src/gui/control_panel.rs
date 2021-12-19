@@ -36,12 +36,13 @@ impl ControlPanel {
             .resizable(false)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    self.render_record_button(ui);
-
-                    self.render_next_race_button(ui);
-
                     self.render_load_button(ui);
                     self.render_save_button(ui);
+                });
+
+                ui.horizontal(|ui| {
+                    self.render_record_button(ui);
+                    self.render_next_race_button(ui);
                 });
             });
     }
@@ -58,16 +59,10 @@ impl ControlPanel {
     }
 
     fn render_next_race_button(&mut self, ui: &mut Ui) {
-        let title = match self.next_race {
-            true => "Cancel next race",
-            false => "Record next race",
-        };
-
-        let btn = egui::Button::new(title);
-
-        if ui.add_enabled(false, btn).clicked() {
-            self.next_race = !self.next_race;
-        }
+        ui.add_enabled(
+            !self.record,
+            egui::Checkbox::new(&mut self.next_race, "Race only"),
+        );
     }
 
     fn render_load_button(&mut self, ui: &mut Ui) {
