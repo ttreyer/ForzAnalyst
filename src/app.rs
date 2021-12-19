@@ -1,13 +1,24 @@
-use crate::egui_backend::egui;
 use crate::forza::{self, chunkify};
 use crate::gui::{chunk_panel::*, control_panel::*, map_panel::*};
-
-use egui::CtxRef;
-use egui::TextureId;
+use eframe::{egui, epi};
 
 use std::{fs::File, io};
 use tinyfiledialogs::{message_box_ok, MessageBoxIcon};
 
+fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
+    let file = std::io::BufReader::new(File::open(path)?);
+    let image = image::load(file, image::ImageFormat::Jpeg)
+        .expect("Failed to load image")
+        .to_rgba8();
+    let size = (image.width() as usize, image.height() as usize);
+    let pixels: Vec<_> = image
+        .pixels()
+        .map(|p| egui::Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
+        .collect();
+    Ok((size, pixels))
+}
+
+#[derive(Default)]
 pub struct App {
     control_panel: ControlPanel,
     chunk_panel: ChunkPanel,
@@ -17,16 +28,6 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(addr: &str, map: TextureId) -> Self {
-        Self {
-            control_panel: ControlPanel::new(),
-            chunk_panel: ChunkPanel::new(),
-            map_panel: MapPanel::new(map),
-            chunks: Self::load_file("goliath.ftm").unwrap(),
-            socket: forza::Socket::new(addr),
-        }
-    }
-
     pub fn process(&mut self) {
         if self.control_panel.is_record() {
             chunkify(self.socket.try_iter(), &mut self.chunks);
@@ -34,8 +35,8 @@ impl App {
             self.socket.try_iter().last();
         }
 
-        if let Some(chunk_selection) = self.chunk_panel.trash_chunk {
-            match chunk_selection {
+        if let Some(chunk_selection) = &self.chunk_panel.trash_chunk {
+            match *chunk_selection {
                 ChunkSelection(chunk_id, None) => {
                     Self::remove_chunk(&mut self.chunks, chunk_id);
                 }
@@ -58,7 +59,41 @@ impl App {
         chunks.append(&mut split_list);
     }
 
-    pub fn show(&mut self, ctx: &CtxRef) {
+    fn load_file(path: &str) -> io::Result<forza::Chunks> {
+        forza::read_chunks(&mut File::open(path)?)
+    }
+
+    fn store_file(path: &str, chunks: &forza::Chunks) -> io::Result<()> {
+        forza::write_chunks(chunks.iter(), &mut File::create(path)?)
+    }
+}
+
+impl epi::App for App {
+    fn name(&self) -> &str {
+        "ForzAnalyst"
+    }
+
+    fn warm_up_enabled(&self) -> bool {
+        true
+    }
+
+    fn setup(
+        &mut self,
+        _ctx: &egui::CtxRef,
+        frame: &mut epi::Frame<'_>,
+        _storage: Option<&dyn epi::Storage>,
+    ) {
+        let (size, pixels) = load_image("fh5_map.jpg").expect("Failed to load image");
+        let map = frame
+            .tex_allocator()
+            .alloc_srgba_premultiplied(size, &pixels);
+        self.map_panel
+            .set_image(egui::Vec2::new(size.0 as f32, size.1 as f32), map);
+    }
+
+    fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
+        self.process();
+
         self.control_panel.show(ctx);
         match &self.control_panel.action {
             Some(ControlAction::Load(path)) => match Self::load_file(&path) {
@@ -92,13 +127,5 @@ impl App {
         } else {
             self.map_panel.show(ctx, &[]);
         }
-    }
-
-    fn load_file(path: &str) -> io::Result<forza::Chunks> {
-        forza::read_chunks(&mut File::open(path)?)
-    }
-
-    fn store_file(path: &str, chunks: &forza::Chunks) -> io::Result<()> {
-        forza::write_chunks(chunks.iter(), &mut File::create(path)?)
     }
 }

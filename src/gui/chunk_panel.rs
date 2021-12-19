@@ -1,27 +1,21 @@
-use std::mem::replace;
+// use std::mem::replace;
 
-use crate::egui_backend::egui;
 use crate::forza::{self, Lap};
+use eframe::egui;
 
 pub type ChunkID = usize;
 pub type LapID = Option<u16>;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(PartialEq, Default)]
 pub struct ChunkSelection(pub ChunkID, pub LapID);
 
+#[derive(Default)]
 pub struct ChunkPanel {
     pub selection: ChunkSelection,
     pub trash_chunk: Option<ChunkSelection>,
 }
 
 impl ChunkPanel {
-    pub fn new() -> Self {
-        Self {
-            selection: ChunkSelection(0, None),
-            trash_chunk: None,
-        }
-    }
-
     fn select(&mut self, chunk_id: ChunkID, lap_id: LapID) {
         self.selection = ChunkSelection(chunk_id, lap_id)
     }

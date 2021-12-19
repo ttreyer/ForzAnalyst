@@ -2,8 +2,8 @@ use std::collections::LinkedList;
 use std::mem::replace;
 use std::ops::Mul;
 
-use crate::egui_backend::egui;
 use crate::forza;
+use eframe::egui;
 
 use egui::plot;
 use egui::plot::{PlotImage, Value, Values};
@@ -18,11 +18,11 @@ pub struct MapPanel {
     len: usize,
 }
 
-impl MapPanel {
-    pub fn new(image_tex_id: TextureId) -> Self {
+impl Default for MapPanel {
+    fn default() -> Self {
         Self {
             pointer_coord: None,
-            image: image_tex_id,
+            image: TextureId::default(),
             image_pos: Value {
                 x: -1755.0,
                 y: 922.0,
@@ -31,6 +31,13 @@ impl MapPanel {
             scale: 3.475,
             len: 2000,
         }
+    }
+}
+
+impl MapPanel {
+    pub fn set_image(&mut self, size: Vec2, image: TextureId) {
+        self.image_size = size;
+        self.image = image;
     }
 
     pub fn show(&mut self, ctx: &egui::CtxRef, packets: &[forza::Packet]) {

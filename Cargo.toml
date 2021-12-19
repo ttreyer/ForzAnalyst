@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 tinyfiledialogs = "3.0"
-egui_sdl2_gl = { git = "https://github.com/ttreyer/egui_sdl2_gl.git" }
+eframe = { git = "https://github.com/emilk/egui.git" }
 image = { version = "0.23.14", default-features = false, features = ["jpeg"] }
 zstd = "0.9.0+zstd.1.5.0"

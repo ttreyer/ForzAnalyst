@@ -230,6 +230,12 @@ pub struct Socket {
     receiver: Receiver<Packet>,
 }
 
+impl Default for Socket {
+    fn default() -> Self {
+        Self::new("0.0.0.0:7024")
+    }
+}
+
 impl Socket {
     pub fn new(addr: &str) -> Self {
         let (sender, receiver) = std::sync::mpsc::channel();

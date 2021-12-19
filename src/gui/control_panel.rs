@@ -1,6 +1,5 @@
+use eframe::egui;
 use egui::{CtxRef, Ui};
-use egui_backend::egui::{self, Button};
-use egui_sdl2_gl as egui_backend;
 use tinyfiledialogs::{open_file_dialog, save_file_dialog_with_filter};
 
 pub enum ControlAction {
@@ -8,6 +7,7 @@ pub enum ControlAction {
     Save(String),
 }
 
+#[derive(Default)]
 pub struct ControlPanel {
     record: bool,
     next_race: bool,
@@ -15,14 +15,6 @@ pub struct ControlPanel {
 }
 
 impl ControlPanel {
-    pub fn new() -> Self {
-        Self {
-            record: false,
-            next_race: false,
-            action: None,
-        }
-    }
-
     pub fn is_record(&self) -> bool {
         self.record
     }
@@ -71,7 +63,7 @@ impl ControlPanel {
             false => "Record next race",
         };
 
-        let btn = Button::new(title);
+        let btn = egui::Button::new(title);
 
         if ui.add_enabled(false, btn).clicked() {
             self.next_race = !self.next_race;
@@ -79,7 +71,7 @@ impl ControlPanel {
     }
 
     fn render_load_button(&mut self, ui: &mut Ui) {
-        let btn = Button::new("Load");
+        let btn = egui::Button::new("Load");
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
@@ -94,7 +86,7 @@ impl ControlPanel {
     }
 
     fn render_save_button(&mut self, ui: &mut Ui) {
-        let btn = Button::new("Save");
+        let btn = egui::Button::new("Save");
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
