@@ -118,14 +118,14 @@ impl epi::App for App {
         self.process();
 
         for file in &ctx.input().raw.dropped_files {
-            if let Some(path) = &file.path {
-                match Self::load_file(path.to_str().unwrap()) {
+            if let Some(path) = file.path.as_ref().and_then(|p| p.to_str()) {
+                match Self::load_file(path) {
                     Ok(mut new_chunks) => {
                         self.chunks.append(&mut new_chunks);
                         self.last_selection = None;
                     }
                     Err(error) => message_box_ok(
-                        &format!("Failed to open {:?}", &path),
+                        &format!("Failed to open {:}", &path),
                         &error.to_string(),
                         MessageBoxIcon::Error,
                     ),
