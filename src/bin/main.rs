@@ -1,7 +1,17 @@
 use forzanalyst::app::App;
 
 fn main() {
-    let app = App::default();
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(Box::new(app), native_options)
+    eframe::run_native(
+        Box::new(App::default()),
+        eframe::NativeOptions {
+            always_on_top: false,
+            decorated: true,
+            icon_data: None,
+            initial_window_size: None,
+            maximized: true,
+            drag_and_drop_support: false,
+            resizable: true,
+            transparent: false,
+        },
+    )
 }
