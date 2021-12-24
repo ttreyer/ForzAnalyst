@@ -117,12 +117,28 @@ impl epi::App for App {
     fn update(&mut self, ctx: &egui::CtxRef, _frame: &mut epi::Frame<'_>) {
         self.process();
 
+        for file in &ctx.input().raw.dropped_files {
+            if let Some(path) = &file.path {
+                match Self::load_file(path.to_str().unwrap()) {
+                    Ok(mut new_chunks) => {
+                        self.chunks.append(&mut new_chunks);
+                        self.last_selection = None;
+                    }
+                    Err(error) => message_box_ok(
+                        &format!("Failed to open {:?}", &path),
+                        &error.to_string(),
+                        MessageBoxIcon::Error,
+                    ),
+                }
+            }
+        }
+
         self.control_panel.show(ctx);
         match &self.control_panel.action {
             Some(ControlAction::Load(path)) => match Self::load_file(&path) {
                 Ok(mut new_chunks) => {
                     self.chunks.append(&mut new_chunks);
-                    self.last_selection = None
+                    self.last_selection = None;
                 }
                 Err(error) => message_box_ok(
                     &format!("Failed to open {:}", &path),
