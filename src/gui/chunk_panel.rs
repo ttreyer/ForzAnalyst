@@ -6,7 +6,7 @@ use eframe::egui;
 pub type ChunkID = usize;
 pub type LapID = Option<u16>;
 
-#[derive(PartialEq, Default)]
+#[derive(PartialEq, Default, Clone, Copy)]
 pub struct ChunkSelection(pub ChunkID, pub LapID);
 
 #[derive(Default)]
@@ -80,6 +80,8 @@ impl ChunkPanel {
     }
 
     pub fn show(&mut self, ctx: &egui::CtxRef, chunks: &forza::Chunks) {
+        self.trash_chunk = None;
+
         egui::Window::new("Chunk").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 let mut packets_count = 0usize;

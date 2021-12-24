@@ -25,6 +25,7 @@ pub struct App {
     map_panel: MapPanel,
     chunks: forza::Chunks,
     socket: forza::Socket,
+    last_selection: Option<ChunkSelection>,
 }
 
 impl App {
@@ -48,8 +49,7 @@ impl App {
                     }
                 }
             }
-
-            self.chunk_panel.trash_chunk = None;
+            self.last_selection = None;
         }
     }
 
@@ -65,6 +65,19 @@ impl App {
 
     fn store_file(path: &str, chunks: &forza::Chunks) -> io::Result<()> {
         forza::write_chunks(chunks.iter(), &mut File::create(path)?)
+    }
+
+    fn update_chunk_selection(&mut self) {
+        self.last_selection = Some(self.chunk_panel.selection);
+        let ChunkSelection(chunk_id, lap_id) = self.chunk_panel.selection;
+
+        let packets;
+        match (self.chunks.iter().nth(chunk_id), lap_id) {
+            (Some(selected_chunk), Some(lap)) => packets = selected_chunk.lap_packets(lap),
+            (Some(selected_chunk), None) => packets = &selected_chunk.packets,
+            (None, _) => packets = &[],
+        }
+        self.map_panel.set_packets(packets);
     }
 }
 
@@ -97,7 +110,10 @@ impl epi::App for App {
         self.control_panel.show(ctx);
         match &self.control_panel.action {
             Some(ControlAction::Load(path)) => match Self::load_file(&path) {
-                Ok(mut new_chunks) => self.chunks.append(&mut new_chunks),
+                Ok(mut new_chunks) => {
+                    self.chunks.append(&mut new_chunks);
+                    self.last_selection = None
+                }
                 Err(error) => message_box_ok(
                     &format!("Failed to open {:}", &path),
                     &error.to_string(),
@@ -118,14 +134,10 @@ impl epi::App for App {
 
         self.chunk_panel.show(ctx, &self.chunks);
 
-        let ChunkSelection(chunk_id, lap_id) = self.chunk_panel.selection;
-        if let Some(selected_chunk) = self.chunks.iter().nth(chunk_id) {
-            match lap_id {
-                Some(lap) => self.map_panel.show(ctx, selected_chunk.lap_packets(lap)),
-                None => self.map_panel.show(ctx, &selected_chunk.packets),
-            }
-        } else {
-            self.map_panel.show(ctx, &[]);
+        if Some(self.chunk_panel.selection) != self.last_selection {
+            self.update_chunk_selection();
         }
+
+        self.map_panel.show(ctx);
     }
 }

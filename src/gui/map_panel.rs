@@ -1,4 +1,3 @@
-use std::collections::LinkedList;
 use std::mem::replace;
 use std::ops::Mul;
 
@@ -15,7 +14,9 @@ pub struct MapPanel {
     image_pos: Value,
     image_size: Vec2,
     scale: f32,
-    len: usize,
+    max_len: usize,
+    tracks: Vec<Vec<Value>>,
+    tracks_step_by: usize,
 }
 
 impl Default for MapPanel {
@@ -29,7 +30,9 @@ impl Default for MapPanel {
             },
             image_size: [5615.0, 3245.0].into(),
             scale: 3.475,
-            len: 2000,
+            max_len: 6000,
+            tracks: Vec::default(),
+            tracks_step_by: 1,
         }
     }
 }
@@ -40,7 +43,24 @@ impl MapPanel {
         self.image = image;
     }
 
-    pub fn show(&mut self, ctx: &egui::CtxRef, packets: &[forza::Packet]) {
+    pub fn set_packets(&mut self, packets: &[forza::Packet]) {
+        self.tracks_step_by = 1 + packets.len() / self.max_len;
+        let mut last_distance = f32::NEG_INFINITY;
+        let mut current_line = Vec::new();
+        let mut lines = Vec::with_capacity(32);
+        for p in packets.iter().step_by(self.tracks_step_by) {
+            if p.distance_traveled < replace(&mut last_distance, p.distance_traveled) {
+                lines.push(replace(&mut current_line, Vec::new()));
+            }
+
+            current_line.push(Value::new(p.position_x, p.position_z));
+        }
+        lines.push(current_line);
+
+        self.tracks = lines;
+    }
+
+    pub fn show(&mut self, ctx: &egui::CtxRef) {
         egui::CentralPanel::default().show(ctx, |ui| {
             // ui.add(egui::Slider::new(&mut self.image_pos.x, -2000.0..=-1900.0));
             // ui.add(egui::Slider::new(&mut self.image_pos.y, 400.0..=500.0));
@@ -61,9 +81,8 @@ impl MapPanel {
 
             // The maximum number of points the plot can display is ~10k
             // This step is used to take 1 sample ever `step` to cap the number of points.
-            let step = f64::ceil((packets.len() as f64 + 1f64) / self.len as f64) as usize;
 
-            if step > 1 {
+            if self.tracks_step_by > 1 {
                 let available_space = ui.available_size_before_wrap();
                 let size = egui::vec2(available_space.x, 12.0);
                 let (rect, _) = ui.allocate_at_least(size, egui::Sense::hover());
@@ -80,18 +99,6 @@ impl MapPanel {
                 );
             }
 
-            let mut last_distance = f32::NEG_INFINITY;
-            let mut current_line = Vec::new();
-            let mut lines = LinkedList::new();
-            for p in packets.iter().step_by(step) {
-                if p.distance_traveled < replace(&mut last_distance, p.distance_traveled) {
-                    lines.push_back(replace(&mut current_line, Vec::new()));
-                }
-
-                current_line.push(Value::new(p.position_x, p.position_z));
-            }
-            lines.push_back(current_line);
-
             let image_plot =
                 PlotImage::new(self.image, self.image_pos, self.image_size.mul(self.scale));
 
@@ -102,19 +109,12 @@ impl MapPanel {
                 };
 
                 let line_color = egui::Color32::from_rgb(255, 0, 255);
-                let mut line_width = 4000.0 / plot_ui.plot_bounds().height() as f32;
-                if line_width > 100.0 {
-                    line_width = 0.1;
-                }
-                line_width = line_width.clamp(0.5, 12.0);
+                let line_width = (4000.0 / plot_ui.plot_bounds().height() as f32).clamp(0.5, 12.0);
 
                 plot_ui.image(image_plot);
-                for line in lines {
-                    plot_ui.line(
-                        plot::Line::new(Values::from_values(line))
-                            .color(line_color)
-                            .width(line_width),
-                    );
+                for track in self.tracks.to_owned() {
+                    let points = Values::from_values(track);
+                    plot_ui.line(plot::Line::new(points).color(line_color).width(line_width));
                 }
             });
         });
