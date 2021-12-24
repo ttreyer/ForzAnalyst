@@ -229,7 +229,7 @@ pub fn write_chunks<'a>(
 }
 
 pub struct Socket {
-    thread: JoinHandle<()>,
+    _thread: JoinHandle<()>,
     receiver: Receiver<Packet>,
 }
 
@@ -264,7 +264,10 @@ impl Socket {
             }
         });
 
-        Socket { thread, receiver }
+        Self {
+            _thread: thread,
+            receiver,
+        }
     }
 
     pub fn iter(&self) -> Iter<'_, Packet> {
