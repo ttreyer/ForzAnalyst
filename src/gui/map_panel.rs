@@ -108,8 +108,8 @@ impl MapPanel {
                     false => None,
                 };
 
-                let line_color = egui::Color32::from_rgb(255, 0, 255);
-                let line_width = (4000.0 / plot_ui.plot_bounds().height() as f32).clamp(0.5, 12.0);
+                let line_color = egui::Color32::from_rgb(255, 48, 134);
+                let line_width = (4000.0 / plot_ui.plot_bounds().height() as f32).clamp(1.6, 16.0);
 
                 plot_ui.image(image_plot);
                 for track in self.tracks.to_owned() {
