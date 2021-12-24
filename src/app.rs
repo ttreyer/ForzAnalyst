@@ -31,7 +31,12 @@ pub struct App {
 impl App {
     pub fn process(&mut self) {
         if self.control_panel.is_record() {
-            chunkify(self.socket.try_iter(), &mut self.chunks);
+            chunkify(
+                self.socket.try_iter().filter(|p| {
+                    !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
+                }),
+                &mut self.chunks,
+            );
             self.chunk_panel.selection = ChunkSelection(
                 self.chunks.len() - 1,
                 self.chunks.iter().last().map(|c| c.lap_count()),
