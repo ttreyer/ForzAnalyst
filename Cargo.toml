@@ -10,3 +10,4 @@ rfd = "0.6"
 eframe = { git = "https://github.com/emilk/egui.git" }
 image = { version = "0.23", default-features = false, features = ["jpeg"] }
 zstd = "0.9"
+tinyfiledialogs = "3.8"

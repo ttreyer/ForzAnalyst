@@ -1,3 +1,4 @@
+use crate::dialog;
 use crate::forza::{self, chunkify};
 use crate::gui::{chunk_panel::*, control_panel::*, map_panel::*};
 use eframe::{egui, epi};
@@ -76,11 +77,7 @@ impl App {
                 self.last_selection = None;
             }
             Err(error) => {
-                rfd::MessageDialog::new()
-                    .set_title(&format!("Failed to open {:}", &path))
-                    .set_description(&error.to_string())
-                    .set_level(rfd::MessageLevel::Error)
-                    .show();
+                dialog::error_dialog(&format!("Failed to open {:}", &path), &error.to_string())
             }
         }
     }
@@ -89,11 +86,10 @@ impl App {
         if let Err(error) =
             File::create(path).and_then(|mut f| forza::write_chunks(self.chunks.iter(), &mut f))
         {
-            rfd::MessageDialog::new()
-                .set_title(&format!("Failed to write to {:}", &path))
-                .set_description(&error.to_string())
-                .set_level(rfd::MessageLevel::Error)
-                .show();
+            dialog::error_dialog(
+                &format!("Failed to write to {:}", &path),
+                &error.to_string(),
+            )
         }
     }
 

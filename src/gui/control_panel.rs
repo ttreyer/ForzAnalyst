@@ -1,6 +1,8 @@
 use eframe::egui;
 use egui::{CtxRef, Ui};
 
+use crate::dialog;
+
 pub enum ControlAction {
     Load(String),
     Save(String),
@@ -69,12 +71,7 @@ impl ControlPanel {
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
-            if let Some(path) = rfd::FileDialog::new()
-                .set_title("Select telemetry file to open")
-                .add_filter("ForzAnalyst telemetry", &["ftm"])
-                .pick_file()
-                .and_then(|path| path.to_str().map(|s| s.to_owned()))
-            {
+            if let Some(path) = dialog::pick_file_dialog() {
                 self.action = Some(ControlAction::Load(path));
             }
         }
@@ -85,12 +82,7 @@ impl ControlPanel {
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
-            if let Some(path) = rfd::FileDialog::new()
-                .set_title("Select where to store telemetry")
-                .add_filter("ForzAnalyst telemetry", &["ftm"])
-                .save_file()
-                .and_then(|path| path.to_str().map(|s| s.to_owned()))
-            {
+            if let Some(path) = dialog::save_file_dialog() {
                 self.action = Some(ControlAction::Save(path));
             }
         }
