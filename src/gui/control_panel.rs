@@ -1,6 +1,5 @@
 use eframe::egui;
 use egui::{CtxRef, Ui};
-use tinyfiledialogs::{open_file_dialog, save_file_dialog_with_filter};
 
 pub enum ControlAction {
     Load(String),
@@ -70,11 +69,12 @@ impl ControlPanel {
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
-            if let Some(path) = open_file_dialog(
-                "Select telemetry file to open",
-                ".",
-                Some((&["*.ftm"], "ForzAnalyst telemetry")),
-            ) {
+            if let Some(path) = rfd::FileDialog::new()
+                .set_title("Select telemetry file to open")
+                .add_filter("ForzAnalyst telemetry", &["ftm"])
+                .pick_file()
+                .and_then(|path| path.to_str().map(|s| s.to_owned()))
+            {
                 self.action = Some(ControlAction::Load(path));
             }
         }
@@ -85,12 +85,12 @@ impl ControlPanel {
 
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
-            if let Some(path) = save_file_dialog_with_filter(
-                "Select path to store telemetry file",
-                "telem.ftm",
-                &["*.ftm"],
-                "ForzAnalyst telemtry",
-            ) {
+            if let Some(path) = rfd::FileDialog::new()
+                .set_title("Select where to store telemetry")
+                .add_filter("ForzAnalyst telemetry", &["ftm"])
+                .save_file()
+                .and_then(|path| path.to_str().map(|s| s.to_owned()))
+            {
                 self.action = Some(ControlAction::Save(path));
             }
         }

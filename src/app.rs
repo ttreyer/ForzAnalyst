@@ -2,8 +2,8 @@ use crate::forza::{self, chunkify};
 use crate::gui::{chunk_panel::*, control_panel::*, map_panel::*};
 use eframe::{egui, epi};
 
+use std::mem::take;
 use std::{fs::File, io};
-use tinyfiledialogs::{message_box_ok, MessageBoxIcon};
 
 fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
     let file = std::io::BufReader::new(File::open(path)?);
@@ -69,12 +69,32 @@ impl App {
         chunks.append(&mut split_list);
     }
 
-    fn load_file(path: &str) -> io::Result<forza::Chunks> {
-        forza::read_chunks(&mut File::open(path)?)
+    fn load_file(&mut self, path: &str) {
+        match File::open(path).and_then(|mut f| forza::read_chunks(&mut f)) {
+            Ok(mut new_chunks) => {
+                self.chunks.append(&mut new_chunks);
+                self.last_selection = None;
+            }
+            Err(error) => {
+                rfd::MessageDialog::new()
+                    .set_title(&format!("Failed to open {:}", &path))
+                    .set_description(&error.to_string())
+                    .set_level(rfd::MessageLevel::Error)
+                    .show();
+            }
+        }
     }
 
-    fn store_file(path: &str, chunks: &forza::Chunks) -> io::Result<()> {
-        forza::write_chunks(chunks.iter(), &mut File::create(path)?)
+    fn store_file(&self, path: &str) {
+        if let Err(error) =
+            File::create(path).and_then(|mut f| forza::write_chunks(self.chunks.iter(), &mut f))
+        {
+            rfd::MessageDialog::new()
+                .set_title(&format!("Failed to write to {:}", &path))
+                .set_description(&error.to_string())
+                .set_level(rfd::MessageLevel::Error)
+                .show();
+        }
     }
 
     fn update_chunk_selection(&mut self) {
@@ -119,42 +139,14 @@ impl epi::App for App {
 
         for file in &ctx.input().raw.dropped_files {
             if let Some(path) = file.path.as_ref().and_then(|p| p.to_str()) {
-                match Self::load_file(path) {
-                    Ok(mut new_chunks) => {
-                        self.chunks.append(&mut new_chunks);
-                        self.last_selection = None;
-                    }
-                    Err(error) => message_box_ok(
-                        &format!("Failed to open {:}", &path),
-                        &error.to_string(),
-                        MessageBoxIcon::Error,
-                    ),
-                }
+                self.load_file(path);
             }
         }
 
         self.control_panel.show(ctx);
-        match &self.control_panel.action {
-            Some(ControlAction::Load(path)) => match Self::load_file(&path) {
-                Ok(mut new_chunks) => {
-                    self.chunks.append(&mut new_chunks);
-                    self.last_selection = None;
-                }
-                Err(error) => message_box_ok(
-                    &format!("Failed to open {:}", &path),
-                    &error.to_string(),
-                    MessageBoxIcon::Error,
-                ),
-            },
-            Some(ControlAction::Save(path)) => {
-                if let Err(error) = Self::store_file(&path, &self.chunks) {
-                    message_box_ok(
-                        &format!("Failed to write to {:}", &path),
-                        &error.to_string(),
-                        MessageBoxIcon::Error,
-                    )
-                }
-            }
+        match take(&mut self.control_panel.action) {
+            Some(ControlAction::Load(path)) => self.load_file(&path),
+            Some(ControlAction::Save(path)) => self.store_file(&path),
             None => {}
         }
 
