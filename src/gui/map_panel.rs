@@ -53,7 +53,7 @@ impl MapPanel {
                 lines.push(replace(&mut current_line, Vec::new()));
             }
 
-            current_line.push(Value::new(p.position_x, p.position_z));
+            current_line.push(Value::new(p.position.x, p.position.z));
         }
         lines.push(current_line);
 
