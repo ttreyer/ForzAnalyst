@@ -1,11 +1,9 @@
-use std::{
-    collections::LinkedList,
-    io::{BufWriter, Read, Write},
-};
+use std::io::{Read, Write};
 
 use super::*;
 
-pub type Chunks = LinkedList<Chunk>;
+pub type Chunks = std::collections::LinkedList<Chunk>;
+
 pub fn chunkify(packets: impl Iterator<Item = Packet>, chunks: &mut Chunks) {
     if chunks.is_empty() {
         chunks.push_back(Chunk::new())
@@ -30,44 +28,6 @@ pub fn chunkify(packets: impl Iterator<Item = Packet>, chunks: &mut Chunks) {
 
         chunks.back_mut().unwrap().push(p);
     }
-}
-
-pub fn read_chunks(input: &mut std::fs::File) -> std::io::Result<Chunks> {
-    let mut input = zstd::Decoder::new(input)?;
-
-    let mut packets = PacketVec::with_capacity(1024);
-    loop {
-        let mut packet = Packet::default();
-        match input.read_exact(packet.as_buf_mut()) {
-            Err(error) => match error.kind() {
-                std::io::ErrorKind::UnexpectedEof => break,
-                _ => return Err(error),
-            },
-            _ => {}
-        };
-        packets.push(packet);
-    }
-    println!("Packets read: {}", packets.len());
-
-    let mut chunks = LinkedList::new();
-    chunkify(packets.into_iter(), &mut chunks);
-
-    Ok(chunks)
-}
-
-pub fn write_chunks<'a>(
-    chunks: impl Iterator<Item = &'a Chunk>,
-    output: &mut std::fs::File,
-) -> std::io::Result<()> {
-    let output = BufWriter::new(output);
-    let mut output = zstd::Encoder::new(output, 0)?;
-    for chunk in chunks {
-        for packet in &chunk.packets {
-            output.write_all(packet.as_buf())?;
-        }
-    }
-    output.finish()?;
-    Ok(())
 }
 
 pub struct Lap(pub u16, pub usize, pub Option<usize>);

@@ -71,9 +71,9 @@ impl App {
     }
 
     fn load_file(&mut self, path: &str) {
-        match File::open(path).and_then(|mut f| forza::read_chunks(&mut f)) {
-            Ok(mut new_chunks) => {
-                self.chunks.append(&mut new_chunks);
+        match File::open(path).and_then(|mut f| forza::read_packets(&mut f)) {
+            Ok(packets) => {
+                chunkify(packets.into_iter(), &mut self.chunks);
                 self.last_selection = None;
             }
             Err(error) => {
@@ -83,9 +83,11 @@ impl App {
     }
 
     fn store_file(&self, path: &str) {
-        if let Err(error) =
-            File::create(path).and_then(|mut f| forza::write_chunks(self.chunks.iter(), &mut f))
-        {
+        if let Err(error) = File::create(path).and_then(|mut f| {
+            self.chunks
+                .iter()
+                .try_for_each(|c| forza::write_packets(c.packets.iter(), &mut f))
+        }) {
             dialog::error_dialog(
                 &format!("Failed to write to {:}", &path),
                 &error.to_string(),

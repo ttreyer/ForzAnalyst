@@ -98,31 +98,34 @@ pub fn write_packets<'a>(
     packets: impl Iterator<Item = &'a Packet>,
     output: &mut std::fs::File,
 ) -> std::io::Result<()> {
-    let mut output = std::io::BufWriter::new(output);
+    let output = std::io::BufWriter::new(output);
+    let mut output = zstd::Encoder::new(output, 0)?;
+
     let mut packet_count = 0;
     for packet in packets {
         packet_count += 1;
         output.write_all(packet.as_buf())?;
     }
+    output.finish().and_then(|mut w| w.flush())?;
+
     println!("Packets written: {}", packet_count);
     Ok(())
 }
 
 pub fn read_packets(input: &mut std::fs::File) -> std::io::Result<PacketVec> {
-    let input_len = input.metadata()?.len() as usize;
-    if input_len % std::mem::size_of::<Packet>() != 0 {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidData,
-            "Invalid file size.",
-        ));
-    }
+    let input = std::io::BufReader::new(input);
+    let mut input = zstd::Decoder::new(input)?;
 
-    let mut input = std::io::BufReader::new(input);
-    let packets_count = input_len / std::mem::size_of::<Packet>();
-    let mut packets = PacketVec::with_capacity(packets_count);
-    for _ in 0..packets_count {
+    let mut packets = PacketVec::with_capacity(1024);
+    loop {
         let mut packet = Packet::default();
-        input.read_exact(packet.as_buf_mut())?;
+        match input.read_exact(packet.as_buf_mut()) {
+            Err(error) => match error.kind() {
+                std::io::ErrorKind::UnexpectedEof => break,
+                _ => return Err(error),
+            },
+            _ => {}
+        };
         packets.push(packet);
     }
 
