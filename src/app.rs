@@ -1,6 +1,6 @@
 use crate::dialog;
-use crate::forza::{self, chunkify};
-use crate::gui::{chunk_panel::*, control_panel::*, map_panel::*};
+use crate::forza;
+use crate::gui::*;
 use eframe::{egui, epi};
 
 use std::mem::take;
@@ -32,7 +32,7 @@ pub struct App {
 impl App {
     pub fn process(&mut self) {
         if self.control_panel.is_record() {
-            chunkify(
+            forza::chunkify(
                 self.socket.try_iter().filter(|p| {
                     !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
                 }),
@@ -73,7 +73,7 @@ impl App {
     fn load_file(&mut self, path: &str) {
         match File::open(path).and_then(|mut f| forza::read_packets(&mut f)) {
             Ok(packets) => {
-                chunkify(packets.into_iter(), &mut self.chunks);
+                forza::chunkify(packets.into_iter(), &mut self.chunks);
                 self.last_selection = None;
             }
             Err(error) => {
