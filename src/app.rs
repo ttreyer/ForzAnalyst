@@ -7,10 +7,7 @@ use std::mem::take;
 use std::{fs::File, io};
 
 fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
-    let file = std::io::BufReader::new(File::open(path)?);
-    let image = image::load(file, image::ImageFormat::Jpeg)
-        .expect("Failed to load image")
-        .to_rgba8();
+    let image = image::open(path).expect("Failed to load image").to_rgba8();
     let size = (image.width() as usize, image.height() as usize);
     let pixels: Vec<_> = image
         .pixels()
