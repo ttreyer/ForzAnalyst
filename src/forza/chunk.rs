@@ -1,5 +1,3 @@
-use std::io::{Read, Write};
-
 use super::*;
 
 pub type Chunks = std::collections::LinkedList<Chunk>;
