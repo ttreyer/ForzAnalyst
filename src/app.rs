@@ -93,17 +93,21 @@ impl App {
         }
     }
 
+    fn selected_packets(selection: ChunkSelection, chunks: &forza::Chunks) -> &[forza::Packet] {
+        let ChunkSelection(chunk_id, lap_id) = selection;
+        match (chunks.iter().nth(chunk_id), lap_id) {
+            (Some(selected_chunk), Some(lap)) => selected_chunk.lap_packets(lap),
+            (Some(selected_chunk), None) => &selected_chunk.packets,
+            (None, _) => &[],
+        }
+    }
+
     fn update_chunk_selection(&mut self) {
         self.last_selection = Some(self.chunk_panel.selection);
-        let ChunkSelection(chunk_id, lap_id) = self.chunk_panel.selection;
-
-        let packets;
-        match (self.chunks.iter().nth(chunk_id), lap_id) {
-            (Some(selected_chunk), Some(lap)) => packets = selected_chunk.lap_packets(lap),
-            (Some(selected_chunk), None) => packets = &selected_chunk.packets,
-            (None, _) => packets = &[],
-        }
-        self.map_panel.set_packets(packets);
+        self.map_panel.set_packets(Self::selected_packets(
+            self.chunk_panel.selection,
+            &self.chunks,
+        ));
     }
 }
 
@@ -152,8 +156,9 @@ impl epi::App for App {
             self.update_chunk_selection();
         }
 
-        self.packet_panel
-            .show(ctx, self.chunks.back().and_then(|c| c.packets.first()));
+        let packets = Self::selected_packets(self.chunk_panel.selection, &self.chunks);
+        let selected_packet = self.map_panel.hovered_packet(packets);
+        self.packet_panel.show(ctx, selected_packet);
 
         self.map_panel.show(ctx);
     }

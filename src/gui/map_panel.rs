@@ -4,6 +4,7 @@ use std::ops::Mul;
 use crate::forza;
 use eframe::egui;
 
+use eframe::egui::epaint::util::FloatOrd;
 use egui::plot;
 use egui::plot::{PlotImage, Value, Values};
 use egui::{TextureId, Vec2};
@@ -53,11 +54,25 @@ impl MapPanel {
                 lines.push(replace(&mut current_line, Vec::new()));
             }
 
-            current_line.push(Value::new(p.position.x, p.position.z));
+            let (x, y) = p.position();
+            current_line.push(Value::new(x, y));
         }
         lines.push(current_line);
 
         self.tracks = lines;
+    }
+
+    pub fn hovered_packet<'a>(&self, packets: &'a [forza::Packet]) -> Option<&'a forza::Packet> {
+        let dist = |mpos: Value, p: &forza::Packet| {
+            egui::Pos2::from(p.position()).distance_sq(mpos.to_pos2())
+        };
+
+        self.pointer_coord.and_then(|mpos| {
+            packets
+                .iter()
+                .min_by_key(|p| dist(mpos, p).ord())
+                .filter(|p| dist(mpos, p) <= (16.0f32).powi(2))
+        })
     }
 
     pub fn show(&mut self, ctx: &egui::CtxRef) {

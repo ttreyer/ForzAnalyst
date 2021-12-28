@@ -85,6 +85,10 @@ impl Packet {
         }
     }
 
+    pub fn position(&self) -> (f32, f32) {
+        (self.position.x, self.position.z)
+    }
+
     pub fn as_buf<'a>(&'a self) -> &'a PacketRaw {
         unsafe { std::mem::transmute::<&Packet, &PacketRaw>(self) }
     }
