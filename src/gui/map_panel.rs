@@ -133,5 +133,13 @@ impl MapPanel {
                 }
             });
         });
+
+        egui::Window::new("mpos").show(ctx, |ui| {
+            if let Some(pos) = self.pointer_coord {
+                ui.label(format!("x = {:.1}\ny = {:.1}", pos.x, pos.y));
+            } else {
+                ui.label(format!("x = ø\ny = ø"));
+            }
+        });
     }
 }
