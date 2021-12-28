@@ -1,5 +1,5 @@
 pub fn save_file_dialog() -> Option<String> {
-    if cfg!(macos) {
+    if cfg!(target_os = "macos") {
         tinyfiledialogs::save_file_dialog_with_filter(
             "Select where to store telemetry",
             "",
@@ -16,7 +16,7 @@ pub fn save_file_dialog() -> Option<String> {
 }
 
 pub fn pick_file_dialog() -> Option<String> {
-    if cfg!(macos) {
+    if cfg!(target_os = "macos") {
         tinyfiledialogs::open_file_dialog(
             "Select telemetry file to open",
             "",
@@ -32,7 +32,7 @@ pub fn pick_file_dialog() -> Option<String> {
 }
 
 pub fn error_dialog(title: &str, description: &str) {
-    if cfg!(macos) {
+    if cfg!(target_os = "macos") {
         tinyfiledialogs::message_box_ok(title, description, tinyfiledialogs::MessageBoxIcon::Error);
     } else {
         rfd::MessageDialog::new()
