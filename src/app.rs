@@ -29,43 +29,45 @@ pub struct App {
 
 impl App {
     pub fn process(&mut self) {
-        if self.control_panel.is_record() {
-            forza::chunkify(
-                self.socket.try_iter().filter(|p| {
-                    !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
-                }),
-                &mut self.chunks,
-            );
+        if !self.control_panel.is_record() {
+            // Clear non-recorded packets
+            self.socket.try_iter().last();
+        } else {
+            // Filter-out non-race packets if we only record race data
+            let wanted_packets = self.socket.try_iter().filter(|p| {
+                !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
+            });
+            forza::chunkify(wanted_packets, &mut self.chunks);
+
+            // Update UI to follow player
+            self.last_selection = None;
             self.chunk_panel.selection = ChunkSelection(
                 self.chunks.len() - 1,
                 self.chunks.iter().last().map(|c| c.lap_count()),
             );
-            self.last_selection = None;
-        } else {
-            self.socket.try_iter().last();
         }
 
-        if let Some(chunk_selection) = &self.chunk_panel.trash_chunk {
-            match *chunk_selection {
+        if let Some(chunk_selection) = take(&mut self.chunk_panel.trash_chunk) {
+            self.last_selection = None;
+            match chunk_selection {
                 ChunkSelection(chunk_id, None) => {
-                    Self::remove_chunk(&mut self.chunks, chunk_id);
+                    self.remove_chunk(chunk_id);
                 }
                 ChunkSelection(chunk_id, Some(lap_num)) => {
                     let chunk = self.chunks.iter_mut().nth(chunk_id).unwrap();
                     chunk.remove_lap(lap_num);
                     if chunk.packets.is_empty() {
-                        Self::remove_chunk(&mut self.chunks, chunk_id);
+                        self.remove_chunk(chunk_id);
                     }
                 }
             }
-            self.last_selection = None;
         }
     }
 
-    fn remove_chunk(chunks: &mut forza::Chunks, id: ChunkID) {
-        let mut split_list = chunks.split_off(id);
+    fn remove_chunk(&mut self, id: ChunkID) {
+        let mut split_list = self.chunks.split_off(id);
         split_list.pop_front();
-        chunks.append(&mut split_list);
+        self.chunks.append(&mut split_list);
     }
 
     fn load_file(&mut self, path: &str) {
@@ -91,12 +93,6 @@ impl App {
                 &error.to_string(),
             )
         }
-    }
-
-    fn update_chunk_selection(&mut self) {
-        self.last_selection = Some(self.chunk_panel.selection);
-        self.map_panel
-            .set_packets(self.chunk_panel.selected_packets(&self.chunks));
     }
 }
 
@@ -142,7 +138,9 @@ impl epi::App for App {
         self.chunk_panel.show(ctx, &self.chunks);
 
         if Some(self.chunk_panel.selection) != self.last_selection {
-            self.update_chunk_selection();
+            self.last_selection = Some(self.chunk_panel.selection);
+            self.map_panel
+                .set_packets(self.chunk_panel.selected_packets(&self.chunks));
         }
 
         let selected_packets = self.chunk_panel.selected_packets(&self.chunks);
