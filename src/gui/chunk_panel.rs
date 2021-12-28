@@ -24,6 +24,15 @@ impl ChunkPanel {
         ChunkSelection(chunk_id, lap_id) == self.selection
     }
 
+    pub fn selected_packets<'a>(&self, chunks: &'a forza::Chunks) -> &'a [forza::Packet] {
+        let ChunkSelection(chunk_id, lap_id) = self.selection;
+        match (chunks.iter().nth(chunk_id), lap_id) {
+            (Some(selected_chunk), Some(lap)) => selected_chunk.lap_packets(lap),
+            (Some(selected_chunk), None) => &selected_chunk.packets,
+            (None, _) => &[],
+        }
+    }
+
     fn trash_chunk(&mut self, chunk_id: ChunkID, lap_id: LapID) {
         self.trash_chunk = Some(ChunkSelection(chunk_id, lap_id))
     }
