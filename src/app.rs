@@ -21,6 +21,7 @@ pub struct App {
     control_panel: ControlPanel,
     chunk_panel: ChunkPanel,
     map_panel: MapPanel,
+    packet_panel: PacketPanel,
     chunks: forza::Chunks,
     socket: forza::Socket,
     last_selection: Option<ChunkSelection>,
@@ -150,6 +151,9 @@ impl epi::App for App {
         if Some(self.chunk_panel.selection) != self.last_selection {
             self.update_chunk_selection();
         }
+
+        self.packet_panel
+            .show(ctx, self.chunks.back().and_then(|c| c.packets.first()));
 
         self.map_panel.show(ctx);
     }
