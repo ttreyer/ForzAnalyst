@@ -43,7 +43,11 @@ impl App {
             self.last_selection = None;
             self.chunk_panel.selection = ChunkSelection(
                 self.chunks.len() - 1,
-                self.chunks.iter().last().map(|c| c.lap_count()),
+                self.chunks
+                    .iter()
+                    .last()
+                    .and_then(|c| c.lap_index.last())
+                    .map(|l| l.0),
             );
         }
 
