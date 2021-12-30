@@ -75,6 +75,7 @@ pub struct Packet {
 pub enum GameMode {
     FreeRoam,
     Race,
+    None,
 }
 
 impl Packet {

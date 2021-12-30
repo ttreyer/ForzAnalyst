@@ -1,30 +1,160 @@
+use std::{collections::HashMap, mem::replace};
+
+use crate::event::{Event, EventGenerator};
+
 use super::*;
 
-pub type Chunks = std::collections::LinkedList<Chunk>;
+//pub type Chunks = std::collections::LinkedList<Chunk>;
 
-pub fn chunkify(packets: impl Iterator<Item = Packet>, chunks: &mut Chunks) {
-    if chunks.is_empty() {
-        chunks.push_back(Chunk::new())
-    };
+pub type ChunkId = usize;
+pub type LapId = Option<u16>;
 
-    for p in packets {
-        if p.current_race_time == 0.0 {
-            match (p.game_mode(), chunks.back().unwrap().game_mode()) {
-                (GameMode::FreeRoam, GameMode::FreeRoam) => {
-                    // Doing nothin here, in order to
-                    // merge the two FreeRoam chunks together
+#[derive(PartialEq, Default, Clone, Copy)]
+pub struct ChunkSelector(pub ChunkId, pub LapId);
+
+pub enum ChunksEvent {
+    LastChunk(ChunkSelector, GameMode),
+}
+
+pub struct Chunks {
+    chunks: std::collections::LinkedList<Chunk>,
+    events: HashMap<u8, Event>,
+}
+
+impl Chunks {
+    pub fn new() -> Self {
+        Self {
+            chunks: std::collections::LinkedList::new(),
+            events: HashMap::with_capacity(1),
+        }
+    }
+
+    pub fn chunkify(&mut self, packets: impl Iterator<Item = Packet>) {
+        if self.chunks.is_empty() {
+            self.chunks.push_back(Chunk::new());
+            let last_chunk = self.generate_selector(self.chunks.len() - 1);
+            self.events.insert(
+                ChunksEvent::LastChunk as u8,
+                Event::ChunksEvent(ChunksEvent::LastChunk(
+                    last_chunk,
+                    self.game_mode_of(last_chunk),
+                )),
+            );
+        };
+
+        for p in packets {
+            if p.game_mode() != self.last_game_mode() {
+                if !self.chunks.back().unwrap().is_empty() {
+                    self.finalize_last_chunk();
+
+                    let last_chunk = self.generate_selector(self.chunks.len() - 1);
+                    self.events.insert(
+                        ChunksEvent::LastChunk as u8,
+                        Event::ChunksEvent(ChunksEvent::LastChunk(
+                            last_chunk,
+                            p.game_mode(),
+                        )),
+                    );
                 }
-                (_, _) => {
-                    // Re-use last chunk if empty
-                    if !chunks.back().unwrap().is_empty() {
-                        chunks.back_mut().unwrap().finalize();
-                        chunks.push_back(Chunk::new())
-                    }
+            }
+
+            self.chunks.back_mut().unwrap().push(p);
+        }
+    }
+
+    pub fn finalize_last_chunk(&mut self) {
+        self.chunks.back_mut().unwrap().finalize();
+        self.chunks.push_back(Chunk::new());
+    }
+
+    pub fn remove_chunk(&mut self, chunk_selector: &ChunkSelector) {
+        match *chunk_selector {
+            ChunkSelector(chunk_id, None) => {self._remove_chunk(chunk_id)},
+            ChunkSelector(chunk_id, Some(lap_num)) => {
+                let chunk = self.chunks.iter_mut().nth(chunk_id).unwrap();
+                chunk.remove_lap(lap_num);
+                if chunk.packets.is_empty() {
+                    self._remove_chunk(chunk_id);
                 }
             }
         }
+    }
 
-        chunks.back_mut().unwrap().push(p);
+    fn _remove_chunk(&mut self, id: ChunkId) {
+        // if the last chunk is remove, generate event
+        if id == self.chunks.len() {
+            let last_chunk = self.generate_selector(self.chunks.len() - 2);
+            self.events.insert(
+                ChunksEvent::LastChunk as u8,
+                Event::ChunksEvent(ChunksEvent::LastChunk(
+                    last_chunk,
+                    self.game_mode_of(last_chunk),
+                )),
+            );
+        }
+
+        let mut split_list = self.chunks.split_off(id);
+        split_list.pop_front();
+        self.chunks.append(&mut split_list);
+    }
+
+    pub fn last_game_mode(&self) -> GameMode {
+        if self.chunks.back().is_some() {
+            self.chunks.back().unwrap().game_mode()
+        } else {
+            GameMode::None
+        }
+    }
+
+    pub fn last_chunk_selector(&self) -> ChunkSelector {
+        self.generate_selector(self.chunks.len() - 1)
+    }
+
+    pub fn game_mode_of(&self, chunk_selector: ChunkSelector) -> GameMode {
+        match chunk_selector {
+            ChunkSelector(chunk_id, _) => {
+                if let Some(chunk) = self.chunks.iter().nth(chunk_id) {
+                    chunk.game_mode()
+                } else {
+                    GameMode::None
+                }
+            }
+        }
+    }
+
+    pub fn list(&self) -> &std::collections::LinkedList<Chunk> {
+        &self.chunks
+    }
+
+    fn generate_selector(&self, chunk_id: ChunkId) -> ChunkSelector {
+        let chunk = self.chunks.iter().nth(chunk_id);
+        let mut lap_id: LapId = None;
+
+        if let Some(chunk) = chunk {
+            lap_id = match chunk.game_mode() {
+                GameMode::Race => Some(chunk.lap_count()),
+                _ => None,
+            };
+        }
+
+        ChunkSelector(chunk_id, lap_id)
+    }
+}
+
+impl Default for Chunks {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EventGenerator for Chunks {
+    fn retrieve_events(&mut self) -> Option<HashMap<u8, Event>> {
+        if self.events.is_empty() {
+            return None;
+        }
+
+        let events = replace(&mut self.events, HashMap::with_capacity(3));
+        Some(events)
     }
 }
 
@@ -65,7 +195,7 @@ impl Chunk {
         self.packets
             .first()
             .map(|p| p.game_mode())
-            .unwrap_or(GameMode::FreeRoam)
+            .unwrap_or(GameMode::None)
     }
 
     pub fn lap_count(&self) -> u16 {
