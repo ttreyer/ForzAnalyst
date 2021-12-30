@@ -4,7 +4,6 @@ use crate::event::EventGenerator;
 use crate::process_events;
 use crate::forza;
 use crate::forza::chunk::ChunkSelector;
-use crate::forza::ChunksEvent;
 use crate::gui::*;
 use eframe::{egui, epi};
 
@@ -39,12 +38,13 @@ impl App {
             self.socket.try_iter().last();
         } else {
             // Filter-out non-race packets if we only record race data
-            let wanted_packets = self.socket.try_iter().filter(|p| {
-                !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
-            });
-            
-            forza::chunkify(wanted_packets, &mut self.chunks);
-            process_events!(self, chunks);
+            let wanted_packets = self.socket.try_iter();//.filter(|p| {
+            //    !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
+            //});
+            self.chunks.chunkify(wanted_packets);
+
+            self.last_selector = None;
+            self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
         }
     }
 
@@ -52,7 +52,6 @@ impl App {
         match File::open(path).and_then(|mut f| forza::read_packets(&mut f)) {
             Ok(packets) => {
                 self.chunks.chunkify(packets.into_iter());
-                process_events!(self, chunks);
             }
             Err(error) => {
                 dialog::error_dialog(&format!("Failed to open {:}", &path), &error.to_string())
@@ -82,12 +81,6 @@ impl App {
                         ControlPanelEvent::Load(path) => self.load_file(&path),
                         ControlPanelEvent::Save(path) => self.save_file(&path),
                     },
-                    Event::ChunksEvent(event) => match event {
-                        ChunksEvent::LastChunk(chunk_selector, _gamemode) => {
-                            self.last_selector = None;
-                            self.chunk_panel.set_selection(chunk_selector)
-                        },
-                    },
                     Event::ChunkPanelEvent(event) => match event {
                         ChunkPanelEvent::ChangeSelection(chunk_selector) => {
                             if Some(chunk_selector) != self.last_selector {
@@ -98,7 +91,6 @@ impl App {
                         },
                         ChunkPanelEvent::RemoveChunk(chunk_selector) => {
                             self.chunks.remove_chunk(&chunk_selector);
-                            self.chunks.drop_events();
 
                             // Force follow last chunk
                             self.last_selector = None;

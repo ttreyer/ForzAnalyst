@@ -9,7 +9,6 @@ use crate::{
     event::{Event, EventGenerator},
 };
 
-#[repr(u8)]
 pub enum ControlPanelEvent {
     Load(String),
     Save(String),
@@ -24,9 +23,8 @@ pub struct ControlPanel {
 impl ControlPanel {
     pub fn new() -> Self {
         Self {
-            record: bool::default(),
-            next_race: bool::default(),
             events: HashMap::with_capacity(3),
+            ..Default::default()
         }
     }
 
