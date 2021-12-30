@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 
-use crate::forza::chunk::ChunksEvent;
 use crate::gui::chunk_panel::ChunkPanelEvent;
 use crate::gui::control_panel::ControlPanelEvent;
 
 pub enum Event {
     ControlPanelEvent(ControlPanelEvent),
-    ChunksEvent(ChunksEvent),
     ChunkPanelEvent(ChunkPanelEvent),
 }
 

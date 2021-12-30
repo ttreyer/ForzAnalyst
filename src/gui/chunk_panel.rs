@@ -21,8 +21,8 @@ pub struct ChunkPanel {
 impl ChunkPanel {
     pub fn new() -> Self {
         Self {
-            selection: ChunkSelector::default(),
             events: HashMap::with_capacity(1),
+            ..Default::default()
         }
     }
 
@@ -144,7 +144,7 @@ impl EventGenerator for ChunkPanel {
             return None;
         }
 
-        let events = replace(&mut self.events, HashMap::with_capacity(3));
+        let events = replace(&mut self.events, HashMap::with_capacity(1));
         Some(events)
     }
 }

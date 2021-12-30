@@ -12,49 +12,25 @@ pub type LapId = Option<u16>;
 #[derive(PartialEq, Default, Clone, Copy)]
 pub struct ChunkSelector(pub ChunkId, pub LapId);
 
-pub enum ChunksEvent {
-    LastChunk(ChunkSelector, GameMode),
-}
-
+#[derive(Default)]
 pub struct Chunks {
     chunks: std::collections::LinkedList<Chunk>,
-    events: HashMap<u8, Event>,
 }
 
 impl Chunks {
     pub fn new() -> Self {
-        Self {
-            chunks: std::collections::LinkedList::new(),
-            events: HashMap::with_capacity(1),
-        }
+        Self::default()
     }
 
     pub fn chunkify(&mut self, packets: impl Iterator<Item = Packet>) {
         if self.chunks.is_empty() {
             self.chunks.push_back(Chunk::new());
-            let last_chunk = self.generate_selector(self.chunks.len() - 1);
-            self.events.insert(
-                ChunksEvent::LastChunk as u8,
-                Event::ChunksEvent(ChunksEvent::LastChunk(
-                    last_chunk,
-                    self.game_mode_of(last_chunk),
-                )),
-            );
         };
 
         for p in packets {
             if p.game_mode() != self.last_game_mode() {
                 if !self.chunks.back().unwrap().is_empty() {
                     self.finalize_last_chunk();
-
-                    let last_chunk = self.generate_selector(self.chunks.len() - 1);
-                    self.events.insert(
-                        ChunksEvent::LastChunk as u8,
-                        Event::ChunksEvent(ChunksEvent::LastChunk(
-                            last_chunk,
-                            p.game_mode(),
-                        )),
-                    );
                 }
             }
 
@@ -81,18 +57,6 @@ impl Chunks {
     }
 
     fn _remove_chunk(&mut self, id: ChunkId) {
-        // if the last chunk is remove, generate event
-        if id == self.chunks.len() {
-            let last_chunk = self.generate_selector(self.chunks.len() - 2);
-            self.events.insert(
-                ChunksEvent::LastChunk as u8,
-                Event::ChunksEvent(ChunksEvent::LastChunk(
-                    last_chunk,
-                    self.game_mode_of(last_chunk),
-                )),
-            );
-        }
-
         let mut split_list = self.chunks.split_off(id);
         split_list.pop_front();
         self.chunks.append(&mut split_list);
@@ -138,23 +102,6 @@ impl Chunks {
         }
 
         ChunkSelector(chunk_id, lap_id)
-    }
-}
-
-impl Default for Chunks {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl EventGenerator for Chunks {
-    fn retrieve_events(&mut self) -> Option<HashMap<u8, Event>> {
-        if self.events.is_empty() {
-            return None;
-        }
-
-        let events = replace(&mut self.events, HashMap::with_capacity(3));
-        Some(events)
     }
 }
 
