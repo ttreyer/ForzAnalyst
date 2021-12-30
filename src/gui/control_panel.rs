@@ -1,21 +1,35 @@
+use std::collections::HashMap;
+use std::mem::replace;
+
 use eframe::egui;
 use egui::{CtxRef, Ui};
 
-use crate::dialog;
+use crate::{
+    dialog,
+    event::{Event, EventGenerator},
+};
 
-pub enum ControlAction {
+#[repr(u8)]
+pub enum ControlPanelEvent {
     Load(String),
     Save(String),
 }
 
-#[derive(Default)]
 pub struct ControlPanel {
     record: bool,
     next_race: bool,
-    pub action: Option<ControlAction>,
+    events: HashMap<u8, Event>,
 }
 
 impl ControlPanel {
+    pub fn new() -> Self {
+        Self {
+            record: bool::default(),
+            next_race: bool::default(),
+            events: HashMap::with_capacity(3),
+        }
+    }
+
     pub fn is_record(&self) -> bool {
         self.record
     }
@@ -29,8 +43,6 @@ impl ControlPanel {
     }
 
     pub fn show(&mut self, ctx: &CtxRef) {
-        self.action = None; // Reset action to None everytimes!
-
         egui::Window::new("Control Records")
             .auto_sized()
             .collapsible(false)
@@ -72,7 +84,10 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::pick_file_dialog() {
-                self.action = Some(ControlAction::Load(path));
+                self.events.insert(
+                    ControlPanelEvent::Load as u8,
+                    Event::ControlPanelEvent(ControlPanelEvent::Load(path)),
+                );
             }
         }
     }
@@ -83,8 +98,28 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::save_file_dialog() {
-                self.action = Some(ControlAction::Save(path));
+                self.events.insert(
+                    ControlPanelEvent::Save as u8,
+                    Event::ControlPanelEvent(ControlPanelEvent::Save(path)),
+                );
             }
         }
+    }
+}
+
+impl Default for ControlPanel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl EventGenerator for ControlPanel {
+    fn retrieve_events(&mut self) -> Option<HashMap<u8, Event>> {
+        if self.events.is_empty() {
+            return None;
+        }
+
+        let events = replace(&mut self.events, HashMap::with_capacity(3));
+        Some(events)
     }
 }

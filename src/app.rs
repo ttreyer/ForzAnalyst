@@ -1,9 +1,14 @@
 use crate::dialog;
+use crate::event::Event;
+use crate::event::EventGenerator;
+use crate::process_events;
 use crate::forza;
+use crate::forza::chunk::ChunkSelector;
+use crate::forza::ChunksEvent;
 use crate::gui::*;
 use eframe::{egui, epi};
 
-use std::mem::take;
+use std::collections::HashMap;
 use std::{fs::File, io};
 
 fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
@@ -24,7 +29,7 @@ pub struct App {
     packet_panel: PacketPanel,
     chunks: forza::Chunks,
     socket: forza::Socket,
-    last_selection: Option<ChunkSelection>,
+    last_selector: Option<ChunkSelector>,
 }
 
 impl App {
@@ -37,48 +42,17 @@ impl App {
             let wanted_packets = self.socket.try_iter().filter(|p| {
                 !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
             });
+            
             forza::chunkify(wanted_packets, &mut self.chunks);
-
-            // Update UI to follow player
-            self.last_selection = None;
-            self.chunk_panel.selection = ChunkSelection(
-                self.chunks.len() - 1,
-                self.chunks
-                    .iter()
-                    .last()
-                    .and_then(|c| c.lap_index.last())
-                    .map(|l| l.0),
-            );
+            process_events!(self, chunks);
         }
-
-        if let Some(chunk_selection) = take(&mut self.chunk_panel.trash_chunk) {
-            self.last_selection = None;
-            match chunk_selection {
-                ChunkSelection(chunk_id, None) => {
-                    self.remove_chunk(chunk_id);
-                }
-                ChunkSelection(chunk_id, Some(lap_num)) => {
-                    let chunk = self.chunks.iter_mut().nth(chunk_id).unwrap();
-                    chunk.remove_lap(lap_num);
-                    if chunk.packets.is_empty() {
-                        self.remove_chunk(chunk_id);
-                    }
-                }
-            }
-        }
-    }
-
-    fn remove_chunk(&mut self, id: ChunkID) {
-        let mut split_list = self.chunks.split_off(id);
-        split_list.pop_front();
-        self.chunks.append(&mut split_list);
     }
 
     fn load_file(&mut self, path: &str) {
         match File::open(path).and_then(|mut f| forza::read_packets(&mut f)) {
             Ok(packets) => {
-                forza::chunkify(packets.into_iter(), &mut self.chunks);
-                self.last_selection = None;
+                self.chunks.chunkify(packets.into_iter());
+                process_events!(self, chunks);
             }
             Err(error) => {
                 dialog::error_dialog(&format!("Failed to open {:}", &path), &error.to_string())
@@ -86,9 +60,10 @@ impl App {
         }
     }
 
-    fn store_file(&self, path: &str) {
+    fn save_file(&self, path: &str) {
         if let Err(error) = File::create(path).and_then(|mut f| {
             self.chunks
+                .list()
                 .iter()
                 .try_for_each(|c| forza::write_packets(c.packets.iter(), &mut f))
         }) {
@@ -96,6 +71,44 @@ impl App {
                 &format!("Failed to write to {:}", &path),
                 &error.to_string(),
             )
+        }
+    }
+
+    fn process_events(&mut self, events: Option<HashMap<u8, Event>>) {
+        if let Some(events) = events {
+            for (_, event) in events {
+                match event {
+                    Event::ControlPanelEvent(event) => match event {
+                        ControlPanelEvent::Load(path) => self.load_file(&path),
+                        ControlPanelEvent::Save(path) => self.save_file(&path),
+                    },
+                    Event::ChunksEvent(event) => match event {
+                        ChunksEvent::LastChunk(chunk_selector, _gamemode) => {
+                            self.last_selector = None;
+                            self.chunk_panel.set_selection(chunk_selector)
+                        },
+                    },
+                    Event::ChunkPanelEvent(event) => match event {
+                        ChunkPanelEvent::ChangeSelection(chunk_selector) => {
+                            if Some(chunk_selector) != self.last_selector {
+                                self.last_selector = Some(chunk_selector);
+                                self.map_panel
+                                    .set_packets(self.chunk_panel.selected_packets(&self.chunks));
+                            }
+                        },
+                        ChunkPanelEvent::RemoveChunk(chunk_selector) => {
+                            self.chunks.remove_chunk(&chunk_selector);
+                            self.chunks.drop_events();
+
+                            // Force follow last chunk
+                            self.last_selector = None;
+                            self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
+                            self.map_panel
+                                .set_packets(self.chunk_panel.selected_packets(&self.chunks));
+                        },
+                    },
+                }
+            }
         }
     }
 }
@@ -133,19 +146,10 @@ impl epi::App for App {
         }
 
         self.control_panel.show(ctx);
-        match take(&mut self.control_panel.action) {
-            Some(ControlAction::Load(path)) => self.load_file(&path),
-            Some(ControlAction::Save(path)) => self.store_file(&path),
-            None => {}
-        }
+        process_events!(self, control_panel);
 
         self.chunk_panel.show(ctx, &self.chunks);
-
-        if Some(self.chunk_panel.selection) != self.last_selection {
-            self.last_selection = Some(self.chunk_panel.selection);
-            self.map_panel
-                .set_packets(self.chunk_panel.selected_packets(&self.chunks));
-        }
+        process_events!(self, chunk_panel);
 
         let selected_packets = self.chunk_panel.selected_packets(&self.chunks);
         let hovered_packet = self.map_panel.hovered_packet(selected_packets);
