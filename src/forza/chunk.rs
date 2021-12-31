@@ -1,10 +1,4 @@
-use std::{collections::HashMap, mem::replace};
-
-use crate::event::{Event, EventGenerator};
-
 use super::*;
-
-//pub type Chunks = std::collections::LinkedList<Chunk>;
 
 pub type ChunkId = usize;
 pub type LapId = Option<u16>;
@@ -18,20 +12,14 @@ pub struct Chunks {
 }
 
 impl Chunks {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn chunkify(&mut self, packets: impl Iterator<Item = Packet>) {
         if self.chunks.is_empty() {
             self.chunks.push_back(Chunk::new());
         };
 
         for p in packets {
-            if p.game_mode() != self.last_game_mode() {
-                if !self.chunks.back().unwrap().is_empty() {
-                    self.finalize_last_chunk();
-                }
+            if p.game_mode() != self.last_game_mode() && !self.chunks.back().unwrap().is_empty() {
+                self.finalize_last_chunk();
             }
 
             self.chunks.back_mut().unwrap().push(p);
@@ -45,7 +33,7 @@ impl Chunks {
 
     pub fn remove_chunk(&mut self, chunk_selector: &ChunkSelector) {
         match *chunk_selector {
-            ChunkSelector(chunk_id, None) => {self._remove_chunk(chunk_id)},
+            ChunkSelector(chunk_id, None) => self._remove_chunk(chunk_id),
             ChunkSelector(chunk_id, Some(lap_num)) => {
                 let chunk = self.chunks.iter_mut().nth(chunk_id).unwrap();
                 chunk.remove_lap(lap_num);

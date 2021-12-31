@@ -90,11 +90,11 @@ impl Packet {
         (self.position.x, self.position.z)
     }
 
-    pub fn as_buf<'a>(&'a self) -> &'a PacketRaw {
+    pub fn as_buf(&'_ self) -> &'_ PacketRaw {
         unsafe { std::mem::transmute::<&Packet, &PacketRaw>(self) }
     }
 
-    pub fn as_buf_mut<'a>(&'a mut self) -> &'a mut PacketRaw {
+    pub fn as_buf_mut(&'_ mut self) -> &'_ mut PacketRaw {
         unsafe { std::mem::transmute::<&mut Packet, &mut PacketRaw>(self) }
     }
 }
@@ -124,12 +124,11 @@ pub fn read_packets(input: &mut std::fs::File) -> std::io::Result<PacketVec> {
     let mut packets = PacketVec::with_capacity(1024);
     loop {
         let mut packet = Packet::default();
-        match input.read_exact(packet.as_buf_mut()) {
-            Err(error) => match error.kind() {
+        if let Err(error) = input.read_exact(packet.as_buf_mut()) {
+            match error.kind() {
                 std::io::ErrorKind::UnexpectedEof => break,
                 _ => return Err(error),
-            },
-            _ => {}
+            }
         };
         packets.push(packet);
     }

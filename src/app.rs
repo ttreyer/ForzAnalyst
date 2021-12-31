@@ -1,10 +1,10 @@
 use crate::dialog;
 use crate::event::Event;
 use crate::event::EventGenerator;
-use crate::process_events;
 use crate::forza;
 use crate::forza::chunk::ChunkSelector;
 use crate::gui::*;
+use crate::process_events;
 use eframe::{egui, epi};
 
 use std::collections::HashMap;
@@ -38,13 +38,14 @@ impl App {
             self.socket.try_iter().last();
         } else {
             // Filter-out non-race packets if we only record race data
-            let wanted_packets = self.socket.try_iter();//.filter(|p| {
-            //    !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
-            //});
+            let wanted_packets = self.socket.try_iter(); //.filter(|p| {
+                                                         //    !self.control_panel.want_next_race() || p.game_mode() == forza::GameMode::Race
+                                                         //});
             self.chunks.chunkify(wanted_packets);
 
             self.last_selection = None;
-            self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
+            self.chunk_panel
+                .set_selection(self.chunks.last_chunk_selector());
         }
     }
 
@@ -88,16 +89,17 @@ impl App {
                                 self.map_panel
                                     .set_packets(self.chunk_panel.selected_packets(&self.chunks));
                             }
-                        },
+                        }
                         ChunkPanelEvent::RemoveChunk(chunk_selector) => {
                             self.chunks.remove_chunk(&chunk_selector);
 
                             // Force follow last chunk
                             self.last_selection = None;
-                            self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
+                            self.chunk_panel
+                                .set_selection(self.chunks.last_chunk_selector());
                             self.map_panel
                                 .set_packets(self.chunk_panel.selected_packets(&self.chunks));
-                        },
+                        }
                     },
                 }
             }
