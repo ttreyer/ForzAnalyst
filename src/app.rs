@@ -28,7 +28,7 @@ pub struct App {
     packet_panel: PacketPanel,
     chunks: forza::Chunks,
     socket: forza::Socket,
-    last_selector: Option<ChunkSelector>,
+    last_selection: Option<ChunkSelector>,
 }
 
 impl App {
@@ -43,7 +43,7 @@ impl App {
             //});
             self.chunks.chunkify(wanted_packets);
 
-            self.last_selector = None;
+            self.last_selection = None;
             self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
         }
     }
@@ -83,8 +83,8 @@ impl App {
                     },
                     Event::ChunkPanelEvent(event) => match event {
                         ChunkPanelEvent::ChangeSelection(chunk_selector) => {
-                            if Some(chunk_selector) != self.last_selector {
-                                self.last_selector = Some(chunk_selector);
+                            if Some(chunk_selector) != self.last_selection {
+                                self.last_selection = Some(chunk_selector);
                                 self.map_panel
                                     .set_packets(self.chunk_panel.selected_packets(&self.chunks));
                             }
@@ -93,7 +93,7 @@ impl App {
                             self.chunks.remove_chunk(&chunk_selector);
 
                             // Force follow last chunk
-                            self.last_selector = None;
+                            self.last_selection = None;
                             self.chunk_panel.set_selection(self.chunks.last_chunk_selector());
                             self.map_panel
                                 .set_packets(self.chunk_panel.selected_packets(&self.chunks));
@@ -142,6 +142,11 @@ impl epi::App for App {
 
         self.chunk_panel.show(ctx, &self.chunks);
         process_events!(self, chunk_panel);
+        if Some(self.chunk_panel.get_selection()) != self.last_selection {
+            self.last_selection = Some(self.chunk_panel.get_selection());
+            self.map_panel
+                .set_packets(self.chunk_panel.selected_packets(&self.chunks));
+        }
 
         let selected_packets = self.chunk_panel.selected_packets(&self.chunks);
         let hovered_packet = self.map_panel.hovered_packet(selected_packets);
