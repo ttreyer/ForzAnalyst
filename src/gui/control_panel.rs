@@ -1,34 +1,22 @@
-use std::collections::HashMap;
-use std::mem::replace;
-
 use eframe::egui;
 use egui::{CtxRef, Ui};
 
-use crate::{
-    dialog,
-    event::{Event, EventGenerator},
-};
+use crate::{dialog, event};
 
-pub enum ControlPanelEvent {
+pub enum EventTypes {
     Load(String),
     Save(String),
 }
+pub type Events = event::Events<EventTypes>;
 
 #[derive(Default)]
 pub struct ControlPanel {
     record: bool,
     next_race: bool,
-    events: HashMap<u8, Event>,
+    events: Events,
 }
 
 impl ControlPanel {
-    pub fn new() -> Self {
-        Self {
-            events: HashMap::with_capacity(3),
-            ..Default::default()
-        }
-    }
-
     pub fn is_record(&self) -> bool {
         self.record
     }
@@ -83,10 +71,8 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::pick_file_dialog() {
-                self.events.insert(
-                    ControlPanelEvent::Load as u8,
-                    Event::ControlPanelEvent(ControlPanelEvent::Load(path)),
-                );
+                self.events
+                    .insert(EventTypes::Load as u8, EventTypes::Load(path));
             }
         }
     }
@@ -97,22 +83,15 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::save_file_dialog() {
-                self.events.insert(
-                    ControlPanelEvent::Save as u8,
-                    Event::ControlPanelEvent(ControlPanelEvent::Save(path)),
-                );
+                self.events
+                    .insert(EventTypes::Save as u8, EventTypes::Save(path));
             }
         }
     }
 }
 
-impl EventGenerator for ControlPanel {
-    fn retrieve_events(&mut self) -> Option<HashMap<u8, Event>> {
-        if self.events.is_empty() {
-            return None;
-        }
-
-        let events = replace(&mut self.events, HashMap::with_capacity(3));
-        Some(events)
+impl event::EventGenerator<EventTypes> for ControlPanel {
+    fn retrieve_events(&mut self) -> Events {
+        std::mem::take(&mut self.events)
     }
 }

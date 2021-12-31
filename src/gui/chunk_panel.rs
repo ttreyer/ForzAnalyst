@@ -1,38 +1,27 @@
-// use std::mem::replace;
-
-use std::collections::HashMap;
-use std::mem::replace;
-
-use crate::event::{Event, EventGenerator};
+use crate::event;
 use crate::forza::{self, Lap};
 use crate::forza::{ChunkId, ChunkSelector, LapId};
 use eframe::egui;
 
-pub enum ChunkPanelEvent {
+pub enum EventTypes {
     ChangeSelection(ChunkSelector),
     RemoveChunk(ChunkSelector),
 }
+pub type Events = event::Events<EventTypes>;
 
 #[derive(Default)]
 pub struct ChunkPanel {
     selection: ChunkSelector,
-    events: HashMap<u8, Event>,
+    events: Events,
 }
 
 impl ChunkPanel {
-    pub fn new() -> Self {
-        Self {
-            events: HashMap::with_capacity(1),
-            ..Default::default()
-        }
-    }
-
     fn select(&mut self, chunk_id: ChunkId, lap_id: LapId) {
         self.selection = ChunkSelector(chunk_id, lap_id);
 
         self.events.insert(
-            ChunkPanelEvent::ChangeSelection as u8,
-            Event::ChunkPanelEvent(ChunkPanelEvent::ChangeSelection(self.selection)),
+            EventTypes::ChangeSelection as u8,
+            EventTypes::ChangeSelection(self.selection),
         );
     }
 
@@ -59,10 +48,8 @@ impl ChunkPanel {
 
     fn remove_chunk(&mut self, chunk_id: ChunkId, lap_id: LapId) {
         self.events.insert(
-            ChunkPanelEvent::RemoveChunk as u8,
-            Event::ChunkPanelEvent(ChunkPanelEvent::RemoveChunk(ChunkSelector(
-                chunk_id, lap_id,
-            ))),
+            EventTypes::RemoveChunk as u8,
+            EventTypes::RemoveChunk(ChunkSelector(chunk_id, lap_id)),
         );
     }
 
@@ -137,13 +124,8 @@ impl ChunkPanel {
     }
 }
 
-impl EventGenerator for ChunkPanel {
-    fn retrieve_events(&mut self) -> Option<HashMap<u8, Event>> {
-        if self.events.is_empty() {
-            return None;
-        }
-
-        let events = replace(&mut self.events, HashMap::with_capacity(1));
-        Some(events)
+impl event::EventGenerator<EventTypes> for ChunkPanel {
+    fn retrieve_events(&mut self) -> Events {
+        std::mem::take(&mut self.events)
     }
 }

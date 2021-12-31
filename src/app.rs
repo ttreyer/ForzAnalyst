@@ -1,13 +1,11 @@
 use crate::dialog;
-use crate::event::Event;
-use crate::event::EventGenerator;
+use crate::event::*;
 use crate::forza;
 use crate::forza::chunk::ChunkSelector;
 use crate::gui::*;
 use crate::process_events;
 use eframe::{egui, epi};
 
-use std::collections::HashMap;
 use std::{fs::File, io};
 
 fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
@@ -73,35 +71,36 @@ impl App {
             )
         }
     }
+}
 
-    fn process_events(&mut self, events: Option<HashMap<u8, Event>>) {
-        if let Some(events) = events {
-            for (_, event) in events {
-                match event {
-                    Event::ControlPanelEvent(event) => match event {
-                        ControlPanelEvent::Load(path) => self.load_file(&path),
-                        ControlPanelEvent::Save(path) => self.save_file(&path),
-                    },
-                    Event::ChunkPanelEvent(event) => match event {
-                        ChunkPanelEvent::ChangeSelection(chunk_selector) => {
-                            if Some(chunk_selector) != self.last_selection {
-                                self.last_selection = Some(chunk_selector);
-                                self.map_panel
-                                    .set_packets(self.chunk_panel.selected_packets(&self.chunks));
-                            }
-                        }
-                        ChunkPanelEvent::RemoveChunk(chunk_selector) => {
-                            self.chunks.remove_chunk(&chunk_selector);
+impl EventHandler<control_panel::EventTypes> for App {
+    fn process_event(&mut self, event: control_panel::EventTypes) {
+        match event {
+            control_panel::EventTypes::Load(path) => self.load_file(&path),
+            control_panel::EventTypes::Save(path) => self.save_file(&path),
+        }
+    }
+}
 
-                            // Force follow last chunk
-                            self.last_selection = None;
-                            self.chunk_panel
-                                .set_selection(self.chunks.last_chunk_selector());
-                            self.map_panel
-                                .set_packets(self.chunk_panel.selected_packets(&self.chunks));
-                        }
-                    },
+impl EventHandler<chunk_panel::EventTypes> for App {
+    fn process_event(&mut self, event: chunk_panel::EventTypes) {
+        match event {
+            chunk_panel::EventTypes::ChangeSelection(chunk_sel) => {
+                if Some(chunk_sel) != self.last_selection {
+                    self.last_selection = Some(chunk_sel);
+                    self.map_panel
+                        .set_packets(self.chunk_panel.selected_packets(&self.chunks));
                 }
+            }
+            chunk_panel::EventTypes::RemoveChunk(chunk_sel) => {
+                self.chunks.remove_chunk(&chunk_sel);
+
+                // Force follow last chunk
+                self.last_selection = None;
+                self.chunk_panel
+                    .set_selection(self.chunks.last_chunk_selector());
+                self.map_panel
+                    .set_packets(self.chunk_panel.selected_packets(&self.chunks));
             }
         }
     }
