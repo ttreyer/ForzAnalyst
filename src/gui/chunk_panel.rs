@@ -13,6 +13,7 @@ pub enum ChunkPanelEvent {
     RemoveChunk(ChunkSelector),
 }
 
+#[derive(Default)]
 pub struct ChunkPanel {
     selection: ChunkSelector,
     events: HashMap<u8, Event>,
@@ -129,12 +130,6 @@ impl ChunkPanel {
                 ui.label(format!("Packets: {}", packets_count));
             });
         });
-    }
-}
-
-impl Default for ChunkPanel {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

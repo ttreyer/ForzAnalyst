@@ -96,7 +96,7 @@ impl Chunks {
 
         if let Some(chunk) = chunk {
             lap_id = match chunk.game_mode() {
-                GameMode::Race => Some(chunk.lap_count()),
+                GameMode::Race => Some(chunk.lap_count() - 1),
                 _ => None,
             };
         }

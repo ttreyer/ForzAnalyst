@@ -14,6 +14,7 @@ pub enum ControlPanelEvent {
     Save(String),
 }
 
+#[derive(Default)]
 pub struct ControlPanel {
     record: bool,
     next_race: bool,
@@ -102,12 +103,6 @@ impl ControlPanel {
                 );
             }
         }
-    }
-}
-
-impl Default for ControlPanel {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
