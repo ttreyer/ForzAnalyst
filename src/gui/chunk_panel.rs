@@ -44,6 +44,10 @@ impl ChunkPanel {
         self.selection = chunk_selector;
     }
 
+    pub fn get_selection(&self) -> ChunkSelector {
+        self.selection
+    }
+
     pub fn selected_packets<'a>(&self, chunks: &'a forza::Chunks) -> &'a [forza::Packet] {
         let ChunkSelector(chunk_id, lap_id) = self.selection;
         match (chunks.list().iter().nth(chunk_id), lap_id) {
