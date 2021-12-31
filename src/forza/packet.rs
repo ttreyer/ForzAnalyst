@@ -1,7 +1,7 @@
 use std::io::{Read, Write};
 
 #[repr(C)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Vec3<T> {
     pub x: T,
     pub y: T,
@@ -9,7 +9,7 @@ pub struct Vec3<T> {
 }
 
 #[repr(C)]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct TireStat<T> {
     pub front_left: T,
     pub front_right: T,
