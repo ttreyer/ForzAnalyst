@@ -1,19 +1,28 @@
 use eframe::egui;
 use egui::{CtxRef, Ui};
 
-use crate::{dialog, event};
+use crate::{
+    dialog,
+    event::{self, EventGenerator},
+};
 
 pub enum EventTypes {
     Load(String),
     Save(String),
 }
-pub type Events = event::Events<EventTypes>;
+type Events = event::Events<EventTypes>;
 
 #[derive(Default)]
 pub struct ControlPanel {
     record: bool,
     next_race: bool,
     events: Events,
+}
+
+impl event::EventGenerator<EventTypes> for ControlPanel {
+    fn events(&mut self) -> &mut Events {
+        &mut self.events
+    }
 }
 
 impl ControlPanel {
@@ -71,8 +80,7 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::pick_file_dialog() {
-                self.events
-                    .insert(EventTypes::Load as u8, EventTypes::Load(path));
+                self.gen_event(EventTypes::Load(path));
             }
         }
     }
@@ -83,15 +91,8 @@ impl ControlPanel {
         if ui.add_enabled(true, btn).clicked() {
             //do something to load a save file
             if let Some(path) = dialog::save_file_dialog() {
-                self.events
-                    .insert(EventTypes::Save as u8, EventTypes::Save(path));
+                self.gen_event(EventTypes::Save(path));
             }
         }
-    }
-}
-
-impl event::EventGenerator<EventTypes> for ControlPanel {
-    fn retrieve_events(&mut self) -> Events {
-        std::mem::take(&mut self.events)
     }
 }

@@ -1,26 +1,28 @@
-pub type EventId = u8;
-pub type Events<EventTypes> = std::collections::HashMap<u8, EventTypes>;
+pub type EventId<EventTypes> = std::mem::Discriminant<EventTypes>;
+pub type Events<EventTypes> = std::collections::HashMap<EventId<EventTypes>, EventTypes>;
 
 pub trait EventGenerator<EventTypes> {
-    fn retrieve_events(&mut self) -> Events<EventTypes>;
-
-    fn drop_events(&mut self) {
-        self.retrieve_events();
+    fn gen_event(&mut self, event: EventTypes) {
+        self.events().insert(std::mem::discriminant(&event), event);
     }
+
+    fn events(&mut self) -> &mut Events<EventTypes>;
 }
 
 pub trait EventHandler<EventTypes> {
-    fn process_event(&mut self, event: EventTypes);
+    fn handle(&mut self, event: EventTypes);
+    fn generator(&mut self) -> &mut dyn EventGenerator<EventTypes>;
 
-    fn process_events(&mut self, events: Events<EventTypes>) {
-        events.into_values().for_each(|e| self.process_event(e));
+    fn handle_events(&mut self) {
+        let generator = self.generator();
+        let events = std::mem::take(generator.events());
+        events.into_values().for_each(|e| self.handle(e));
     }
 }
 
 #[macro_export]
 macro_rules! process_events {
-    ( $self:ident, $event_generator:ident ) => {
-        let events = $self.$event_generator.retrieve_events();
-        $self.process_events(events);
+    ( $self:ident, $event_types:ty ) => {
+        EventHandler::<$event_types>::handle_events($self);
     };
 }

@@ -1,4 +1,4 @@
-use crate::event;
+use crate::event::{self, EventGenerator};
 use crate::forza::{self, Lap};
 use crate::forza::{ChunkId, ChunkSelector, LapId};
 use eframe::egui;
@@ -7,7 +7,7 @@ pub enum EventTypes {
     ChangeSelection(ChunkSelector),
     RemoveChunk(ChunkSelector),
 }
-pub type Events = event::Events<EventTypes>;
+type Events = event::Events<EventTypes>;
 
 #[derive(Default)]
 pub struct ChunkPanel {
@@ -15,14 +15,17 @@ pub struct ChunkPanel {
     events: Events,
 }
 
+impl event::EventGenerator<EventTypes> for ChunkPanel {
+    fn events(&mut self) -> &mut Events {
+        &mut self.events
+    }
+}
+
 impl ChunkPanel {
     fn select(&mut self, chunk_id: ChunkId, lap_id: LapId) {
         self.selection = ChunkSelector(chunk_id, lap_id);
 
-        self.events.insert(
-            EventTypes::ChangeSelection as u8,
-            EventTypes::ChangeSelection(self.selection),
-        );
+        self.gen_event(EventTypes::ChangeSelection(self.selection));
     }
 
     fn is_selected(&self, chunk_id: ChunkId, lap_id: LapId) -> bool {
@@ -47,10 +50,7 @@ impl ChunkPanel {
     }
 
     fn remove_chunk(&mut self, chunk_id: ChunkId, lap_id: LapId) {
-        self.events.insert(
-            EventTypes::RemoveChunk as u8,
-            EventTypes::RemoveChunk(ChunkSelector(chunk_id, lap_id)),
-        );
+        self.gen_event(EventTypes::RemoveChunk(ChunkSelector(chunk_id, lap_id)));
     }
 
     fn show_free_roam(&mut self, ui: &mut egui::Ui, chunk_id: ChunkId) {
@@ -121,11 +121,5 @@ impl ChunkPanel {
                 ui.label(format!("Packets: {}", packets_count));
             });
         });
-    }
-}
-
-impl event::EventGenerator<EventTypes> for ChunkPanel {
-    fn retrieve_events(&mut self) -> Events {
-        std::mem::take(&mut self.events)
     }
 }

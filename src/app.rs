@@ -3,7 +3,6 @@ use crate::event::*;
 use crate::forza;
 use crate::forza::chunk::ChunkSelector;
 use crate::gui::*;
-use crate::process_events;
 use eframe::{egui, epi};
 
 use std::{fs::File, io};
@@ -74,7 +73,11 @@ impl App {
 }
 
 impl EventHandler<control_panel::EventTypes> for App {
-    fn process_event(&mut self, event: control_panel::EventTypes) {
+    fn generator(&mut self) -> &mut dyn EventGenerator<control_panel::EventTypes> {
+        &mut self.control_panel
+    }
+
+    fn handle(&mut self, event: control_panel::EventTypes) {
         match event {
             control_panel::EventTypes::Load(path) => self.load_file(&path),
             control_panel::EventTypes::Save(path) => self.save_file(&path),
@@ -83,7 +86,11 @@ impl EventHandler<control_panel::EventTypes> for App {
 }
 
 impl EventHandler<chunk_panel::EventTypes> for App {
-    fn process_event(&mut self, event: chunk_panel::EventTypes) {
+    fn generator(&mut self) -> &mut dyn EventGenerator<chunk_panel::EventTypes> {
+        &mut self.chunk_panel
+    }
+
+    fn handle(&mut self, event: chunk_panel::EventTypes) {
         match event {
             chunk_panel::EventTypes::ChangeSelection(chunk_sel) => {
                 if Some(chunk_sel) != self.last_selection {
@@ -139,10 +146,10 @@ impl epi::App for App {
         }
 
         self.control_panel.show(ctx);
-        process_events!(self, control_panel);
+        EventHandler::<control_panel::EventTypes>::handle_events(self);
 
         self.chunk_panel.show(ctx, &self.chunks);
-        process_events!(self, chunk_panel);
+        EventHandler::<chunk_panel::EventTypes>::handle_events(self);
         if Some(self.chunk_panel.get_selection()) != self.last_selection {
             self.last_selection = Some(self.chunk_panel.get_selection());
             self.map_panel
