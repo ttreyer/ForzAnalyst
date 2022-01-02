@@ -100,7 +100,7 @@ impl PacketPanel {
                                 Self::show_num(ui, "Airbrake: ", pkt.normalized_aibrake_difference);
 
                                 egui::CollapsingHeader::new("Vehicule")
-                                    .default_open(true)
+                                    .default_open(false)
                                     .show(ui, |ui| {
                                         Self::show_num(ui, "Ordinal: ", pkt.car_ordinal);
                                         Self::show_num(ui, "Class: ", pkt.car_class);
