@@ -54,6 +54,7 @@ impl App {
     fn load_file(&mut self, path: &str) {
         match File::open(path).and_then(|mut f| forza::read_packets(&mut f)) {
             Ok(packets) => {
+                self.last_selection = None;
                 self.chunks.chunkify(packets.into_iter());
             }
             Err(error) => {
