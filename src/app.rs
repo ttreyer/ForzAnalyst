@@ -5,16 +5,21 @@ use crate::forza::chunk::ChunkSelector;
 use crate::gui::*;
 use eframe::{egui, epi};
 
-use std::{fs::File, io};
+use std::fs::File;
 
-fn load_image(path: &str) -> io::Result<((usize, usize), Vec<egui::Color32>)> {
-    let image = image::open(path).expect("Failed to load image").to_rgba8();
-    let size = (image.width() as usize, image.height() as usize);
-    let pixels: Vec<_> = image
-        .pixels()
-        .map(|p| egui::Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
-        .collect();
-    Ok((size, pixels))
+macro_rules! load_image {
+    ($path: literal) => {{
+        let data = include_bytes!($path);
+        let image = image::load_from_memory(data)
+            .expect("Failed to load image")
+            .to_rgba8();
+        let size = (image.width() as usize, image.height() as usize);
+        let pixels: Vec<_> = image
+            .pixels()
+            .map(|p| egui::Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]))
+            .collect();
+        (size, pixels)
+    }};
 }
 
 #[derive(Default)]
@@ -128,7 +133,7 @@ impl epi::App for App {
         frame: &mut epi::Frame<'_>,
         _storage: Option<&dyn epi::Storage>,
     ) {
-        let (size, pixels) = load_image("fh5_map.jpg").expect("Failed to load image");
+        let (size, pixels) = load_image!("../fh5_map.jpg");
         let map = frame
             .tex_allocator()
             .alloc_srgba_premultiplied(size, &pixels);
